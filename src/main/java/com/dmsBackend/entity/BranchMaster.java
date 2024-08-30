@@ -20,6 +20,8 @@ public class BranchMaster {
 
     @Column(name = "name")
     private String name;
+    @Column(name="is_Active")
+    private int isActive;
 
     @Column(name = "address")
     private String address;

@@ -1,5 +1,6 @@
 package com.dmsBackend.service.Impl;
 
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.entity.TypeMaster;
 import com.dmsBackend.entity.YearMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
@@ -58,4 +59,15 @@ public class TypeMasterServiceImpl implements TypeMasterService {
     public TypeMaster findByIdType(Integer id) {
         return typeMasterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Type not found","Id",id));
     }
+
+    @Override
+    public TypeMaster updateStatus(Integer id, Integer isActive) {
+        TypeMaster typeMaster = typeMasterRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Type", "id", id));
+
+        typeMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
+        typeMaster.setIsActive(isActive);
+        return typeMasterRepository.save(typeMaster);
+    }
+
 }

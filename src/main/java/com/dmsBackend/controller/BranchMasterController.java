@@ -58,4 +58,14 @@ public class BranchMasterController {
 
 
     }
+
+    @PutMapping("updatestatus/{id}")
+    public ResponseEntity<BranchMaster> updateRoleStatus(@PathVariable Integer id, @RequestBody BranchMaster branchMaster) {
+        try {
+            BranchMaster branchMaster1 = branchMasterService.updateStatus(id,branchMaster.getIsActive());
+            return new ResponseEntity<>(branchMaster1, HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

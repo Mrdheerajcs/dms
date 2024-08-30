@@ -1,6 +1,7 @@
 package com.dmsBackend.service.Impl;
 
 import com.dmsBackend.entity.CategoryMaster;
+import com.dmsBackend.entity.TypeMaster;
 import com.dmsBackend.entity.YearMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.Helper;
@@ -57,5 +58,14 @@ public class YearMasterServiceImpl implements YearMasterService {
     @Override
     public YearMaster findByIdyear(Integer id) {
         return yearMasterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("year not found","Id",id));
+    }
+    @Override
+    public YearMaster updateStatus(Integer id, Integer isActive) {
+        YearMaster yearMaster = yearMasterRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Type", "id", id));
+
+        yearMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
+        yearMaster.setIsActive(isActive);
+        return yearMasterRepository.save(yearMaster);
     }
 }

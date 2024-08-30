@@ -1,6 +1,7 @@
 package com.dmsBackend.service;
 
 import com.dmsBackend.entity.CategoryMaster;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.entity.YearMaster;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ public interface YearMasterService {
     List<YearMaster> findAllYearMaster();
     Optional<YearMaster> findYearMasterById(Integer id);
     YearMaster findByIdyear(Integer id);
+    YearMaster updateStatus(Integer id, Integer isActive);
 
 
 }

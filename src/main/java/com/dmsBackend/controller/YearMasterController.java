@@ -1,6 +1,7 @@
 package com.dmsBackend.controller;
 
 import com.dmsBackend.entity.CategoryMaster;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.entity.YearMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.ApiResponse;
@@ -56,5 +57,15 @@ public class YearMasterController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
 
 
+    }
+
+    @PutMapping("updatestatus/{id}")
+    public ResponseEntity<YearMaster> updateRoleStatus(@PathVariable Integer id, @RequestBody YearMaster yearMaster) {
+        try {
+            YearMaster yearMaster1 = yearMasterService.updateStatus(id,yearMaster.getIsActive());
+            return new ResponseEntity<>(yearMaster1, HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }

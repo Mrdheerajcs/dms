@@ -21,8 +21,11 @@ public class BranchMasterServiceImpl implements BranchMasterService {
     public BranchMaster saveBranchMaster(BranchMaster branchMaster) {
         branchMaster.setCreatedOn(Helper.getCurrentTimeStamp());
         branchMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
-        return branchMasterRepository.save(branchMaster);
+        BranchMaster savedBranch = branchMasterRepository.save(branchMaster);
+        System.out.println("Branch saved with ID: " + savedBranch.getId());
+        return savedBranch;
     }
+
 
     @Override
     public BranchMaster updateBranchMaster(BranchMaster branchMaster, Integer id) {
@@ -57,5 +60,15 @@ public class BranchMasterServiceImpl implements BranchMasterService {
     @Override
     public BranchMaster findByIdBran(Integer id) {
         return branchMasterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Branch not found","Id",id));
+    }
+
+    @Override
+    public BranchMaster updateStatus(Integer id, Integer isActive) {
+        BranchMaster branchMaster = branchMasterRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Type", "id", id));
+
+        branchMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
+        branchMaster.setIsActive(isActive);
+        return branchMasterRepository.save(branchMaster);
     }
 }

@@ -1,6 +1,5 @@
 package com.dmsBackend.service.Impl;
 
-import com.dmsBackend.entity.DocumentDetails;
 import com.dmsBackend.entity.DocumentHeader;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.Helper;
@@ -14,40 +13,38 @@ import java.util.Optional;
 
 @Service
 public class DocumentHeaderServiceImpl implements DocumentHeaderService {
-    @Autowired
-    DocumentHeaderRepository documentHeaderRepository;
 
+    @Autowired
+    private DocumentHeaderRepository documentHeaderRepository;
+
+    @Override
     public DocumentHeader createDocumentHeader(DocumentHeader documentHeader) {
         return documentHeaderRepository.save(documentHeader);
     }
 
     @Override
     public DocumentHeader updateDocumentHeader(DocumentHeader documentHeader, Integer id) {
-        Optional<DocumentHeader> documentHeaderOptional = documentHeaderRepository.findById(id);
+        DocumentHeader existingDocumentHeader = documentHeaderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("DocumentHeader", "id", id));
 
-        if (documentHeaderOptional.isPresent()) {
-            DocumentHeader documentHeader1 = documentHeaderOptional.get();
-            documentHeader1.setTitle(documentHeader.getTitle());
-            documentHeader1.setFileNo(documentHeader.getFileNo());
-            documentHeader1.setSubject(documentHeader.getSubject());
-            documentHeader1.setVersion(documentHeader.getVersion());
-            documentHeader1.setType(documentHeader.getType());
-            documentHeader1.setEmployee(documentHeader.getEmployee());
-            documentHeader1.setDepartment(documentHeader.getDepartment());
-            documentHeader1.setBranch(documentHeader.getBranch());
-            documentHeader1.setCategory(documentHeader.getCategory());
-            documentHeader1.setYear(documentHeader.getYear());
-            documentHeader1.setUpdatedOn(Helper.getCurrentTimeStamp());
+        existingDocumentHeader.setTitle(documentHeader.getTitle());
+        existingDocumentHeader.setFileNo(documentHeader.getFileNo());
+        existingDocumentHeader.setSubject(documentHeader.getSubject());
+        existingDocumentHeader.setVersion(documentHeader.getVersion());
+        existingDocumentHeader.setType(documentHeader.getType());
+        existingDocumentHeader.setEmployee(documentHeader.getEmployee());
+        existingDocumentHeader.setDepartment(documentHeader.getDepartment());
+        existingDocumentHeader.setBranch(documentHeader.getBranch());
+        existingDocumentHeader.setCategory(documentHeader.getCategory());
+        existingDocumentHeader.setYear(documentHeader.getYear());
+        existingDocumentHeader.setUpdatedOn(Helper.getCurrentTimeStamp());
 
-            return documentHeaderRepository.save(documentHeader1);
-        } else {
-            throw new ResourceNotFoundException("DocumentHeader not found for ", "Id", id);
-        }
+        return documentHeaderRepository.save(existingDocumentHeader);
     }
 
     @Override
     public void deleteByIdDocumentHeader(Integer id) {
-     documentHeaderRepository.deleteById(id);
+        documentHeaderRepository.deleteById(id);
     }
 
     @Override
@@ -62,20 +59,12 @@ public class DocumentHeaderServiceImpl implements DocumentHeaderService {
 
     @Override
     public Optional<DocumentHeader> getApprovedDocumentById(Integer id) {
-        return documentHeaderRepository.findByIdAndStatus(id,true);
+        return documentHeaderRepository.findByIdAndStatus(id, true);
     }
-
-//    @Override
-//    public DocumentHeader getApprovedDocumentById(Integer docId) {
-//        DocumentHeader appovedDocumentById = documentHeaderRepository.findAppovedDocumentById(docId, 1);
-//        return appovedDocumentById;
-//    }
-
 
     @Override
     public List<DocumentHeader> getAllPendingStatus() {
-        List<DocumentHeader> byIsApprovedFalse = documentHeaderRepository.findByIsApprovedFalse();
-        return byIsApprovedFalse;
+        return documentHeaderRepository.findByIsApprovedFalse();
     }
 
     @Override
@@ -92,4 +81,15 @@ public class DocumentHeaderServiceImpl implements DocumentHeaderService {
         documentHeader.setUpdatedOn(Helper.getCurrentTimeStamp());
         return documentHeaderRepository.save(documentHeader);
     }
+
+    @Override
+    public DocumentHeader updateActiveStatus(Integer id, Integer isActive) {
+        DocumentHeader documentHeader = documentHeaderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("DocumentHeader", "id", id));
+
+        documentHeader.setIsActive(isActive);
+        documentHeader.setUpdatedOn(Helper.getCurrentTimeStamp());
+        return documentHeaderRepository.save(documentHeader);
+    }
+
 }

@@ -58,4 +58,14 @@ public class CategoryMasterServiceImpl implements CategoryMasterService {
     public CategoryMaster findByIdCate(Integer id) {
         return categoryMasterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("CategoryMaster not found","Id",id));
     }
+
+    @Override
+    public CategoryMaster updateStatus(Integer id, Integer isActive) {
+        CategoryMaster categoryMaster = categoryMasterRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Type", "id", id));
+
+        categoryMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
+        categoryMaster.setIsActive(isActive);
+        return categoryMasterRepository.save(categoryMaster);
+    }
 }

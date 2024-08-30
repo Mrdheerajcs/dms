@@ -53,4 +53,14 @@ public class CategoryMasterController {
         return categoryMasterMaster.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
+
+    @PutMapping("updatestatus/{id}")
+    public ResponseEntity<CategoryMaster> updateRoleStatus(@PathVariable Integer id, @RequestBody CategoryMaster categoryMaster) {
+        try {
+            CategoryMaster categoryMaster1 = categoryMasterService.updateStatus(id,categoryMaster.getIsActive());
+            return new ResponseEntity<>(categoryMaster1, HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+    }
 }

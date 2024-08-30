@@ -14,6 +14,7 @@ public interface BranchMasterService {
      List<BranchMaster> findAllBranchMaster();
      Optional<BranchMaster> findBranchMasterById(Integer id);
     BranchMaster findByIdBran(Integer id);
+    BranchMaster updateStatus(Integer id, Integer isActive);
 
 
 

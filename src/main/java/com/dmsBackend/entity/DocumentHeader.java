@@ -19,6 +19,9 @@ public class DocumentHeader {
     @Column(name = "fileNo")
     private String fileNo;
 
+    @Column(name="is_Active")
+    private int isActive;
+
     @Column(name = "subject")
     private String subject;
 

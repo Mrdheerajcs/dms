@@ -13,6 +13,8 @@ public class CategoryMaster {
     @Column(name = "id", nullable = false)
     private Integer id;
 
+    @Column(name="is_Active")
+    private int isActive;
     @Column(name = "name")
     private String name;
     @Column(name = "created_on", updatable = false)

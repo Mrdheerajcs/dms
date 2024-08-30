@@ -14,5 +14,5 @@ public interface CategoryMasterService {
     List<CategoryMaster> findAllCategoryMaster();
     Optional<CategoryMaster> findCategoryMasterById(Integer id);
     CategoryMaster findByIdCate(Integer id);
-
+    CategoryMaster updateStatus(Integer id, Integer isActive);
 }

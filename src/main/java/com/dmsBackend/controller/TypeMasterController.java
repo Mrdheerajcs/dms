@@ -1,5 +1,6 @@
 package com.dmsBackend.controller;
 
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.entity.TypeMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.ApiResponse;
@@ -52,5 +53,15 @@ public class TypeMasterController {
         Optional<TypeMaster> typeMaster = typeMasterService.findTypeMasterById(id);
         return typeMaster.map(value -> new ResponseEntity<>(value, HttpStatus.OK))
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
+    }
+
+    @PutMapping("updatestatus/{id}")
+    public ResponseEntity<TypeMaster> updateRoleStatus(@PathVariable Integer id, @RequestBody TypeMaster typeMaster) {
+        try {
+            TypeMaster typeMaster1 = typeMasterService.updateStatus(id,typeMaster.getIsActive());
+            return new ResponseEntity<>(typeMaster1, HttpStatus.OK);
+        } catch (ResourceNotFoundException e) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
     }
 }

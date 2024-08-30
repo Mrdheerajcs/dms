@@ -15,6 +15,8 @@ public class YearMaster {
 
     @Column(name = "name")
     private String name;
+    @Column(name="is_Active")
+    private int isActive;
 
     @Column(name="createdOn")
     private Timestamp createdOn;
