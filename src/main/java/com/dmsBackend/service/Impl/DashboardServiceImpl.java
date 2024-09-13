@@ -13,7 +13,7 @@ public class DashboardServiceImpl implements DashboardService {
     EmployeeRepository employeeRepository;
 
     @Autowired
-    DocumentDetailRepository documentDetailRepository;
+    DocumentDetailsRepository documentDetailRepository;
 
     @Autowired
     DocumentHeaderRepository documentHeaderRepository;

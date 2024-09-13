@@ -1,4 +1,5 @@
 package com.dmsBackend.entity;
+
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.security.core.GrantedAuthority;
@@ -6,13 +7,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.Timestamp;
-import java.util.*;
+import java.util.Collection;
+import java.util.Set;
 import java.util.stream.Collectors;
-
 
 @Entity
 @Data
-public class Employee  implements UserDetails {
+public class Employee implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -27,19 +28,25 @@ public class Employee  implements UserDetails {
     @Column(name = "mobile")
     private String mobile;
 
-    @Column(name = "email")
+    @Column(name = "email", unique = true) // Ensure email is unique
     private String email;
 
     @Column(name = "name")
     private String name;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "employee_type")
+    private EmployeeType employeeType; // Field for employee type (Admin/User)
 
     @Column(name = "isActive")
     private int isActive;
 
     @Column(name = "otp")
     private int otp;
-    @Column(name="createdOn")
+
+    @Column(name = "createdOn")
     private Timestamp createdOn;
+
     @Column(name = "updatedOn")
     private Timestamp updatedOn;
 
@@ -51,7 +58,6 @@ public class Employee  implements UserDetails {
     @JoinColumn(name = "department_master_branch_Master_Id")
     private BranchMaster branch;
 
-
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "employee_roles",
@@ -59,19 +65,12 @@ public class Employee  implements UserDetails {
             inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<RoleMaster> roles;
-//    @Override
-//    public Collection<? extends GrantedAuthority> getAuthorities() {
-//        List<SimpleGrantedAuthority> authorities =
-//                this.roles.stream().map((role) -> new SimpleGrantedAuthority(role.getRole())).collect(Collectors.toList());
-//
-//        return authorities;
-//    }
-
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Return roles or authorities associated with the user
-        return new ArrayList<>();
+        return this.roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.getRole())) // Assuming RoleMaster has a 'getRole()' method
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -96,6 +95,6 @@ public class Employee  implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return this.isActive == 1; // Assuming 1 means active, 0 means inactive
     }
 }

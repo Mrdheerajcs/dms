@@ -3,9 +3,6 @@ package com.dmsBackend.service.Impl;
 import com.dmsBackend.entity.*;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.Helper;
-import com.dmsBackend.repository.BranchMasterRepository;
-import com.dmsBackend.repository.DepartmentMasterRepository;
-import com.dmsBackend.repository.EmployeeHasRoleMasterRepository;
 import com.dmsBackend.repository.EmployeeRepository;
 import com.dmsBackend.service.EmployeeService;
 import jakarta.transaction.Transactional;
@@ -22,67 +19,49 @@ public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeRepository employeeRepository;
 
     @Autowired
-    private BranchMasterRepository branchMasterRepository;
-
-    @Autowired
-    private DepartmentMasterRepository departmentMasterRepository;
-
-    @Autowired
-    private EmployeeHasRoleMasterRepository employeeHasRoleRepository;
-
-    @Autowired
     private PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private EmployeeIdGenerator employeeIdGenerator;
 
     @Override
     @Transactional
     public Employee save(Employee employee) {
+        // Check if email already exists
+        if (employeeRepository.findByEmail(employee.getEmail()) != null) {
+            throw new RuntimeException("Email is already in use.");
+        }
+
+        // Ensure that the password is set before encoding
+        if (employee.getPassword() == null || employee.getPassword().isEmpty()) {
+            throw new RuntimeException("Password must not be null or empty.");
+        }
+
         // Set timestamps
         employee.setCreatedOn(Helper.getCurrentTimeStamp());
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
-        //employee.setEmployeeId(employeeIdGenerator.generateEmployeeId());
-
-//        // Find and set branch
-//        BranchMaster branchMaster = branchMasterRepository.findById(employee.getBranch().getId())
-//                .orElseThrow(() -> new RuntimeException("Branch Not Found"));
-//        employee.setBranch(branchMaster);
-//
-//        // Find and set department
-//        DepartmentMaster department = departmentMasterRepository.findById(employee.getDepartment().getId())
-//                .orElseThrow(() -> new RuntimeException("Department Not Found"));
-//        employee.setDepartment(department);
 
         // Encode the password before saving
         employee.setPassword(passwordEncoder.encode(employee.getPassword()));
 
+        // Ensure that department and branch are set (optional)
+        if (employee.getDepartment() == null) {
+            throw new RuntimeException("Department must not be null.");
+        }
+        if (employee.getBranch() == null) {
+            throw new RuntimeException("Branch must not be null.");
+        }
+
         // Save the employee
-        Employee savedEmployee = employeeRepository.save(employee);
-
-        // Save the role relationships
-//        for (RoleMaster role : employee.getRoles()) {
-//            EmployeeHasRoleMaster employeeHasRole = new EmployeeHasRoleMaster();
-//            employeeHasRole.setEmployee(savedEmployee);
-//            employeeHasRole.setRole(role);
-//            employeeHasRole.setBranch(branchMaster);
-//            employeeHasRole.setDepartment(department);
-//            employeeHasRoleRepository.save(employeeHasRole);
-//        }
-
-        return savedEmployee;
+        return employeeRepository.save(employee);
     }
 
+
     @Override
-    public Employee findByEmail(String email)
-    {
+    public Employee findByEmail(String email) {
         return employeeRepository.findByEmail(email);
     }
 
-
     @Override
     public void deleteByIdEmployee(Integer id) {
-      employeeRepository.deleteById(id);
+        employeeRepository.deleteById(id);
     }
 
     @Override
@@ -97,7 +76,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public Employee findByIdEmp(Integer id) {
-        return employeeRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("employee not found","Id",id));
+        return employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("employee not found", "Id", id));
     }
 
     @Override
@@ -107,6 +87,17 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
         employee.setIsActive(isActive);
-         employeeRepository.save(employee);
+        employeeRepository.save(employee);
     }
+
+    @Override
+    public Employee updateEmployeeType(Integer id, EmployeeType employeeType) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("employee", "id", id));
+
+        employee.setEmployeeType(employeeType);
+        employee.setUpdatedOn(Helper.getCurrentTimeStamp());
+        return employeeRepository.save(employee); // Return the updated employee
+    }
+
 }

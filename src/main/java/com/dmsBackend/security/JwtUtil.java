@@ -25,6 +25,10 @@ public class JwtUtil {
         return extractClaim(token, Claims::getSubject);
     }
 
+    public String extractEmployeeType(String token) {
+        return extractClaim(token, claims -> claims.get("employeeType", String.class)); // Extract employeeType
+    }
+
     public Date extractExpiration(String token) {
         return extractClaim(token, Claims::getExpiration);
     }
@@ -45,18 +49,19 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username) {
+    public String generateToken(String username, String employeeType) { // Accept employeeType as a String
         Map<String, Object> claims = new HashMap<>();
+        claims.put("employeeType", employeeType); // Add employeeType to claims
         return createToken(claims, username);
     }
+
 
     private String createToken(Map<String, Object> claims, String subject) {
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 hours
-
+                .setExpiration(new Date(System.currentTimeMillis() + expiration)) // Use the expiration value from properties
                 .signWith(SignatureAlgorithm.HS256, secret)
                 .compact();
     }

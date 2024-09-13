@@ -1,6 +1,14 @@
 package com.dmsBackend.controller;
 
-import com.dmsBackend.security.*;
+import com.dmsBackend.entity.Employee;
+import com.dmsBackend.entity.EmployeeType;
+import com.dmsBackend.security.EmailService;
+import com.dmsBackend.security.JwtUtil;
+import com.dmsBackend.security.OtpService;
+import com.dmsBackend.service.EmployeeService;
+import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -8,18 +16,17 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
 @RestController
 @RequestMapping("/auth")
 @CrossOrigin("http://localhost:3000")
 public class AuthController {
 
-    @Autowired
-    private AuthenticationManager authenticationManager;
+    private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @Autowired
-    private CustomUserDetailService userDetailsService;
+    private AuthenticationManager authenticationManager;
 
     @Autowired
     private JwtUtil jwtUtil;
@@ -30,22 +37,42 @@ public class AuthController {
     @Autowired
     private EmailService emailService;
 
+    @Autowired
+    private EmployeeService employeeService;
+
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody AuthRequest authRequest) {
+    public ResponseEntity<?> login(@RequestBody @Valid AuthRequest authRequest) {
+        logger.info("User {} is attempting to login.", authRequest.getEmail());
+
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // Generate OTP and send it
-            String otp = otpService.generateOtp(authRequest.getEmail());
-            emailService.sendOtp(authRequest.getEmail(), otp);
+            Employee employee = employeeService.findByEmail(authRequest.getEmail());
+            if (employee == null) {
+                return createErrorResponse("Employee not found.");
+            }
 
-            return ResponseEntity.ok("OTP sent to your email.");
+            // Check if the employee type is assigned
+            if (employee.getEmployeeType() == null) {
+                return createErrorResponse("Employee Type not assigned. Please contact Admin.");
+            }
+
+            return sendOtpForLogin(employee, authRequest.getEmail());
         } catch (BadCredentialsException e) {
-            return ResponseEntity.status(401).body("Invalid username or password.");
+            logger.error("Invalid login attempt for user {}: {}", authRequest.getEmail(), e.getMessage());
+            return createErrorResponse("Invalid username or password.");
         }
+    }
+
+    private ResponseEntity<?> sendOtpForLogin(Employee employee, String email) {
+        String otp = otpService.generateOtp(email);
+        emailService.sendOtp(email, otp);
+
+        String message = "OTP sent to " + employee.getEmployeeType().name() + " email.";
+        return ResponseEntity.ok(new AuthResponse(null, message, employee.getEmployeeType(), employee.getName()));
     }
 
     @PostMapping("/verifyOtp")
@@ -53,80 +80,123 @@ public class AuthController {
         boolean isValid = otpService.validateOtp(otpRequest.getEmail(), otpRequest.getOtp());
 
         if (!isValid) {
-            return ResponseEntity.status(401).body("Invalid OTP.");
+            return createErrorResponse("Invalid OTP.");
         }
 
-        // Load user details and generate JWT token
-        UserDetails userDetails = userDetailsService.loadUserByUsername(otpRequest.getEmail());
-        String token = jwtUtil.generateToken(userDetails.getUsername());
+        Employee employee = employeeService.findByEmail(otpRequest.getEmail());
+        if (employee == null) {
+            return createErrorResponse("Employee not found.");
+        }
 
-        // Clear OTP after successful validation
-        otpService.clearOtp(otpRequest.getEmail());
+        String token = jwtUtil.generateToken(employee.getEmail(), employee.getEmployeeType().name());
+        otpService.clearOtp(otpRequest.getEmail()); // Clear OTP after successful validation
 
-        return ResponseEntity.ok(new AuthResponse(token));
-    }
-}
-
-
-
-// DTO classes
-class AuthRequest {
-    private String email;
-    private String password;
-
-    // getters and setters
-    public String getEmail() {
-        return email;
+        return ResponseEntity.ok(new AuthResponse(token, "OTP verified successfully.", employee.getEmployeeType(), employee.getName()));
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    // Centralized error response method
+    private ResponseEntity<ApiResponse> createErrorResponse(String message) {
+        return ResponseEntity.badRequest().body(new ApiResponse("error", message, null));
     }
 
-    public String getPassword() {
-        return password;
+    // DTO classes
+
+    public static class AuthRequest {
+        @jakarta.validation.constraints.Email
+        @jakarta.validation.constraints.NotBlank
+        private String email;
+
+        @jakarta.validation.constraints.NotBlank
+        private String password;
+
+        // Getters and Setters
+        public String getEmail() {
+            return email;
+        }
+
+        public void setEmail(String email) {
+            this.email = email;
+        }
+
+        public String getPassword() {
+            return password;
+        }
+
+        public void setPassword(String password) {
+            this.password = password;
+        }
     }
 
-    public void setPassword(String password) {
-        this.password = password;
-    }
-}
+    public static class OtpRequest {
+        @jakarta.validation.constraints.Email
+        @jakarta.validation.constraints.NotBlank
+        private String email;
 
-class OtpRequest {
-    private String email;
-    private String otp;
+        @jakarta.validation.constraints.NotBlank
+        private String otp;
 
-    // getters and setters
-    public String getEmail() {
-        return email;
-    }
+        // Getters and Setters
+        public String getEmail() {
+            return email;
+        }
 
-    public void setEmail(String email) {
-        this.email = email;
-    }
+        public void setEmail(String email) {
+            this.email = email;
+        }
 
-    public String getOtp() {
-        return otp;
-    }
+        public String getOtp() {
+            return otp;
+        }
 
-    public void setOtp(String otp) {
-        this.otp = otp;
-    }
-}
-
-class AuthResponse {
-    private String token;
-
-    public AuthResponse(String token) {
-        this.token = token;
+        public void setOtp(String otp) {
+            this.otp = otp;
+        }
     }
 
-    // getters and setters
-    public String getToken() {
-        return token;
-    }
+    public static class AuthResponse {
+        private String token;  // JWT token for users
+        private String message; // Optional message for response
+        private EmployeeType employeeType; // Store the employee type
+        private String name; // Store the employee name
 
-    public void setToken(String token) {
-        this.token = token;
+        public AuthResponse(String token, String message, EmployeeType employeeType, String name) {
+            this.token = token;
+            this.message = message;
+            this.employeeType = employeeType;
+            this.name = name;
+        }
+
+        // Getters and Setters
+        public String getToken() {
+            return token;
+        }
+
+        public void setToken(String token) {
+            this.token = token;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public EmployeeType getEmployeeType() {
+            return employeeType;
+        }
+
+        public void setEmployeeType(EmployeeType employeeType) {
+            this.employeeType = employeeType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
     }
 }
