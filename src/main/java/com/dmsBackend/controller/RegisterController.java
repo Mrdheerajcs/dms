@@ -1,17 +1,14 @@
 package com.dmsBackend.controller;
 
 import com.dmsBackend.entity.Employee;
-import com.dmsBackend.entity.EmployeeHasRoleMaster;
-import com.dmsBackend.entity.RoleMaster;
-import com.dmsBackend.entity.EmployeeType; // Import EmployeeType
 import com.dmsBackend.payloads.ApiResponse;
 import com.dmsBackend.payloads.Helper;
-import com.dmsBackend.service.EmployeeHasRoleService;
 import com.dmsBackend.service.EmployeeService;
 import com.dmsBackend.service.RoleMasterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,9 +26,6 @@ public class RegisterController {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private EmployeeHasRoleService employeeHasRoleService;
-
-    @Autowired
     private RoleMasterService roleMasterService;
 
     @Autowired
@@ -39,55 +33,53 @@ public class RegisterController {
 
     @PostMapping("/newRegister")
     public ResponseEntity<ApiResponse> registerUser(@RequestBody Employee employee) {
-        // Generate password
         String generatedPassword = generatePassword(employee.getName(), employee.getMobile());
 
-        // Set the password
-        employee.setPassword(generatedPassword);
+        if (employee.getEmail() == null || employee.getEmail().isEmpty()) {
+            return ResponseEntity.badRequest().body(new ApiResponse("Email must not be null or empty.", false));
+        }
+
+        if (employee.getName() == null || employee.getName().isEmpty()) {
+            return ResponseEntity.badRequest().body(new ApiResponse("Name must not be null or empty.", false));
+        }
+
+        if (employee.getMobile() == null || employee.getMobile().isEmpty()) {
+            return ResponseEntity.badRequest().body(new ApiResponse("Mobile number must not be null or empty.", false));
+        }
+        
+        employee.setPassword(passwordEncoder.encode(generatedPassword));
+
         employee.setCreatedOn(Helper.getCurrentTimeStamp());
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
 
-        // Set EmployeeType to null by default
-        employee.setEmployeeType(null); // Set EmployeeType to null initially
-
         try {
-            // Save employee
+            employee.setRole(null);
             Employee savedEmployee = employeeService.save(employee);
 
-            // Associate roles with employee
-            for (RoleMaster role : employee.getRoles()) {
-                RoleMaster savedRole = roleMasterService.saveRoleMaster(role);
-                EmployeeHasRoleMaster employeeHasRole = new EmployeeHasRoleMaster();
-                employeeHasRole.setEmployee(savedEmployee);
-                employeeHasRole.setRole(savedRole);
-                employeeHasRole.setDepartment(savedEmployee.getDepartment());
-                employeeHasRole.setBranch(savedEmployee.getBranch());
-                employeeHasRoleService.saved(employeeHasRole);
+            try {
+                sendPasswordEmail(employee.getEmail(), generatedPassword);
+            } catch (MailException e) {
+                // Handle email failure (optional)
+                return ResponseEntity.ok(new ApiResponse("Employee registered, but email sending failed.", true));
             }
 
-            // Send email with the generated password
-            sendPasswordEmail(employee.getEmail(), generatedPassword);
+            return ResponseEntity.ok(new ApiResponse("Employee registered successfully, roles not assigned.", true));
 
-            return ResponseEntity.ok(new ApiResponse("Employee registered successfully.", true));
         } catch (RuntimeException e) {
-            // Return specific error messages based on the exception
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse(e.getMessage(), false));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ApiResponse(e.getMessage(), false));
+
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse("Error saving employee: " + e.getMessage(), false));
+                    .body(new ApiResponse("Error registering employee: " + e.getMessage(), false));
         }
     }
 
-
-    // Method to generate a password based on the username and first 4 digits of the mobile number
     private String generatePassword(String username, String mobile) {
         String usernamePrefix = username.length() >= 4 ? username.substring(0, 4).toUpperCase() : username.toUpperCase();
         String mobileSuffix = mobile.length() >= 4 ? mobile.substring(mobile.length() - 4) : mobile;
         return usernamePrefix + mobileSuffix;
     }
 
-    // Method to send email with the generated password
     private void sendPasswordEmail(String email, String password) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(email);
@@ -98,16 +90,5 @@ public class RegisterController {
                 "Please change your password after logging in.\n\n" +
                 "Best regards,\nCompany Team");
         mailSender.send(message);
-    }
-
-    // Add endpoint to update EmployeeType after registration
-    @PutMapping("/{id}/type")
-    public ResponseEntity<ApiResponse> updateEmployeeType(@PathVariable Integer id, @RequestBody EmployeeType employeeType) {
-        try {
-            Employee updatedEmployee = employeeService.updateEmployeeType(id, employeeType);
-            return ResponseEntity.ok(new ApiResponse("Employee type updated successfully.", true));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new ApiResponse("Error updating employee type", false));
-        }
     }
 }

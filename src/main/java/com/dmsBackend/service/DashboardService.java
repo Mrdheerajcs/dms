@@ -4,5 +4,7 @@ import com.dmsBackend.response.DashboardResponse;
 
 public interface DashboardService {
 
-DashboardResponse getAllUsers();
+DashboardResponse getAllUsers(String employeeId);
+
+
 }

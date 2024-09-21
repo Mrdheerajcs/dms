@@ -1,18 +1,24 @@
 package com.dmsBackend.service;
 
 import com.dmsBackend.entity.Employee;
-import com.dmsBackend.entity.EmployeeType;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface EmployeeService {
     Employee save(Employee employee);
     Employee findByEmail(String email);
+    Employee findById(Integer id);
     void deleteByIdEmployee(Integer id);
     List<Employee> findAllEmployee();
-    Optional<Employee> findEmployeeById(Integer id);
-    Employee findByIdEmp(Integer id);
-    void updateEmployeeStatus(Integer id, Integer isActive);
-    Employee updateEmployeeType(Integer id, EmployeeType employeeType); // New method to update employee type
+    void updateEmployeeStatus(Integer id, boolean isActive);
+    void updateEmployeeRole(String email, Integer roleId);
+
+    // New methods
+    List<Employee> getEmployeesByRoleIsNullById(Integer id);
+    List<Employee> findEmployeesByRole(String roleName);
+    List<Employee> getEmployeesByRoleIsNull();
+    List<Employee> getAllWithoutNullRole();
+    long countEmployeesByRoleNull();
+    long countEmployeesByRoleNotNull();
+    long countEmployeesByRole(String roleName);
 }

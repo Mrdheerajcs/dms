@@ -55,12 +55,16 @@ public class CategoryMasterController {
     }
 
     @PutMapping("updatestatus/{id}")
-    public ResponseEntity<CategoryMaster> updateRoleStatus(@PathVariable Integer id, @RequestBody CategoryMaster categoryMaster) {
+    public ResponseEntity<CategoryMaster> updateCategoryStatus(@PathVariable Integer id, @RequestBody CategoryMaster categoryMaster) {
         try {
-            CategoryMaster categoryMaster1 = categoryMasterService.updateStatus(id,categoryMaster.getIsActive());
+            boolean isActive = categoryMaster.isActive(); // Use the correct getter method
+            CategoryMaster categoryMaster1 = categoryMasterService.updateStatus(id, isActive);
             return new ResponseEntity<>(categoryMaster1, HttpStatus.OK);
         } catch (ResourceNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
+
+
+
 }

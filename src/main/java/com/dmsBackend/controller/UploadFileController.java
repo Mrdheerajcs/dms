@@ -1,6 +1,5 @@
 package com.dmsBackend.controller;
 
-import com.dmsBackend.service.DocumentDetailService;
 import com.dmsBackend.service.UploadFileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,18 +15,20 @@ import java.io.IOException;
 @CrossOrigin("http://localhost:3000")
 public class UploadFileController {
 
-    @Value("images/")
+    @Value("${file.upload-dir:images/}")  // Use property for path, with a default value
     private String path;
 
     @Autowired
-    UploadFileService uploadFileService;
-    @Autowired
-    DocumentDetailService documentDetailService;
+    private UploadFileService uploadFileService;
 
     @PostMapping("/File")
-    public ResponseEntity<String> uploadFile(@RequestParam("images") MultipartFile image) throws IOException {
-        String fileName = this.uploadFileService.uploadImage(path, image);
+    public ResponseEntity<String> uploadFile(
+            @RequestParam("images") MultipartFile image,
+            @RequestParam("category") String category) throws IOException {
+
+        // Call the service method with the category
+        String fileName = uploadFileService.uploadImage(path, image, category);
+
         return new ResponseEntity<>(fileName, HttpStatus.OK);
     }
-
 }

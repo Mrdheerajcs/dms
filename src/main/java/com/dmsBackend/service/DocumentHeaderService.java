@@ -1,19 +1,74 @@
 package com.dmsBackend.service;
 
 import com.dmsBackend.entity.DocumentHeader;
+import com.dmsBackend.entity.DocApprovalStatus;
+import com.dmsBackend.entity.Employee;
 
+import java.sql.Timestamp;
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
 
 public interface DocumentHeaderService {
-    List<DocumentHeader> getAllPendingStatus();
-    List<DocumentHeader> getAllApprovedStatus();
-    DocumentHeader updateStatus(Integer id, Boolean isApproved);
-    DocumentHeader createDocumentHeader(DocumentHeader documentHeader);
-    DocumentHeader updateDocumentHeader(DocumentHeader documentHeader, Integer id);
+
+    DocumentHeader saveDocumentHeader(DocumentHeader documentHeader);
+
+    DocumentHeader updateDocumentHeader(Integer id, DocumentHeader updatedDocument);
+
+    DocumentHeader findDocumentHeaderById(Integer id);
+
+    List<DocumentHeader> findAllDocumentHeaders();
+
     void deleteByIdDocumentHeader(Integer id);
-    List<DocumentHeader> findAllDocumentHeader();
-    Optional<DocumentHeader> findDocumentHeaderById(Integer id);
-    Optional<DocumentHeader> getApprovedDocumentById(Integer id);
-    DocumentHeader updateActiveStatus(Integer id, Integer isActive);
+
+    DocumentHeader updateApprovalStatus(Integer id, DocApprovalStatus status, String rejectionReason, Integer employeeId);
+
+    DocumentHeader updateActiveStatus(Integer id, boolean isActive);
+
+    List<DocumentHeader> getAllApproved();
+
+    List<DocumentHeader> getAllRejected();
+
+    List<DocumentHeader> getAllPending();
+
+    List<DocumentHeader> getAllApprovedByEmployeeId(Integer employeeId);
+
+    List<DocumentHeader> getAllRejectedByEmployeeId(Integer employeeId);
+
+    List<DocumentHeader> getAllPendingByEmployeeId(Integer employeeId);
+
+    List<DocumentHeader> findAllDocumentHeadersByEmployeeId(Integer employeeId);
+
+    //  Admin
+    List<DocumentHeader> findAllRejectedByActionEmployeeId(Integer employeeId);
+
+    List<DocumentHeader> findAllApprovedByActionEmployeeId(Integer employeeId);
+
+
+
+    //For Count
+
+    long countApprovedDocuments();
+
+    long countRejectedDocuments();
+
+    long countPendingDocuments();
+
+    long countApprovedDocumentsByEmployeeId(Integer employeeId);
+
+    long countRejectedDocumentsByEmployeeId(Integer employeeId);
+
+    long countPendingDocumentsByEmployeeId(Integer employeeId);
+
+    long countDocumentHeadersByEmployeeId(Integer employeeId);
+
+    long countRejectedByActionEmployeeId(Integer employeeId);
+
+    long countApprovedByActionEmployeeId(Integer employeeId);
+
+    //For Graph
+    Map<String, Object> countAllDocumentsByIdWithMonth(Integer employeeId, Timestamp startDate, Timestamp endDate);
+
+    Map<String, Object> getApprovalSummaryByEmployeeId(Integer employeeId);
+
+
 }

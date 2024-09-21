@@ -1,6 +1,5 @@
 package com.dmsBackend.service.Impl;
 
-import com.dmsBackend.entity.BranchMaster;
 import com.dmsBackend.entity.CategoryMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.Helper;
@@ -11,13 +10,14 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+
 @Service
 public class CategoryMasterServiceImpl implements CategoryMasterService {
     @Autowired
     CategoryMasterRepository categoryMasterRepository;
+
     @Override
     public CategoryMaster savecategoryMaster(CategoryMaster categoryMaster) {
-
         categoryMaster.setCreatedOn(Helper.getCurrentTimeStamp());
         categoryMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
         return categoryMasterRepository.save(categoryMaster);
@@ -33,20 +33,19 @@ public class CategoryMasterServiceImpl implements CategoryMasterService {
             categoryMaster1.setUpdatedOn(Helper.getCurrentTimeStamp());
 
             return categoryMasterRepository.save(categoryMaster1);
-        }else {
-            throw new ResourceNotFoundException("CategoryMaster not found for ","Id" ,id);
+        } else {
+            throw new ResourceNotFoundException("CategoryMaster not found for ", "Id", id);
         }
     }
 
     @Override
     public void deleteByIdCategoryMaster(Integer id) {
         this.categoryMasterRepository.deleteById(id);
-
     }
 
     @Override
     public List<CategoryMaster> findAllCategoryMaster() {
-        return categoryMasterRepository.findAll()   ;
+        return categoryMasterRepository.findAll();
     }
 
     @Override
@@ -56,16 +55,17 @@ public class CategoryMasterServiceImpl implements CategoryMasterService {
 
     @Override
     public CategoryMaster findByIdCate(Integer id) {
-        return categoryMasterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("CategoryMaster not found","Id",id));
+        return categoryMasterRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("CategoryMaster not found", "Id", id));
     }
 
     @Override
-    public CategoryMaster updateStatus(Integer id, Integer isActive) {
+    public CategoryMaster updateStatus(Integer id, boolean isActive) {
         CategoryMaster categoryMaster = categoryMasterRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Type", "id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("CategoryMaster not found", "Id", id));
 
         categoryMaster.setUpdatedOn(Helper.getCurrentTimeStamp());
-        categoryMaster.setIsActive(isActive);
+        categoryMaster.setActive(isActive); // Accepts a boolean
         return categoryMasterRepository.save(categoryMaster);
     }
+
 }

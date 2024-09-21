@@ -14,4 +14,17 @@ public class DashboardResponse {
     private long documentType;
     private long annualYear;
     private long totalCategories;
+
+    private long totalApprovedDocuments;
+    private long totalRejectedDocuments;
+    private long totalPendingDocuments;
+    private long totalApprovedDocumentsById;
+    private long totalRejectedDocumentsById;
+    private long totalPendingDocumentsById;
+    private long totalDocumentsById;
+
+    private long totalNullEmployeeType;
+
+    private long totalApprovedStatusDocById;
+    private long totalRejectedStatusDocById;
 }

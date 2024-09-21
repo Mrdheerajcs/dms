@@ -1,9 +1,11 @@
 package com.dmsBackend.service.Impl;
 
-import com.dmsBackend.entity.*;
+import com.dmsBackend.entity.Employee;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.Helper;
 import com.dmsBackend.repository.EmployeeRepository;
+import com.dmsBackend.repository.RoleMasterRepository;
 import com.dmsBackend.service.EmployeeService;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,33 +17,28 @@ import java.util.Optional;
 
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
+
     @Autowired
     private EmployeeRepository employeeRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private RoleMasterRepository roleMasterRepository;
+
     @Override
     @Transactional
     public Employee save(Employee employee) {
-        // Check if email already exists
-        if (employeeRepository.findByEmail(employee.getEmail()) != null) {
+        Optional<Employee> existingEmployee = employeeRepository.findByEmail(employee.getEmail());
+
+        if (existingEmployee.isPresent()) {
             throw new RuntimeException("Email is already in use.");
         }
 
-        // Ensure that the password is set before encoding
         if (employee.getPassword() == null || employee.getPassword().isEmpty()) {
             throw new RuntimeException("Password must not be null or empty.");
         }
-
-        // Set timestamps
-        employee.setCreatedOn(Helper.getCurrentTimeStamp());
-        employee.setUpdatedOn(Helper.getCurrentTimeStamp());
-
-        // Encode the password before saving
-        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
-
-        // Ensure that department and branch are set (optional)
         if (employee.getDepartment() == null) {
             throw new RuntimeException("Department must not be null.");
         }
@@ -49,14 +46,18 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new RuntimeException("Branch must not be null.");
         }
 
-        // Save the employee
+        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+        employee.setCreatedOn(Helper.getCurrentTimeStamp());
+        employee.setUpdatedOn(Helper.getCurrentTimeStamp());
+        employee.setRole(null); // Ensure role is null during the creation process
+
         return employeeRepository.save(employee);
     }
 
-
     @Override
     public Employee findByEmail(String email) {
-        return employeeRepository.findByEmail(email);
+        return employeeRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Employee not found with email: " + email));
     }
 
     @Override
@@ -70,34 +71,81 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public Optional<Employee> findEmployeeById(Integer id) {
-        return employeeRepository.findById(id);
-    }
-
-    @Override
-    public Employee findByIdEmp(Integer id) {
+    public Employee findById(Integer id) {
         return employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("employee not found", "Id", id));
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found", "Id", id));
     }
 
     @Override
-    public void updateEmployeeStatus(Integer id, Integer isActive) {
+    public void updateEmployeeStatus(Integer id, boolean isActive) {
         Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("employee", "id", id));
-
+                .orElseThrow(() -> new ResourceNotFoundException("Employee", "id", id));
+        employee.setActive(isActive);
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
-        employee.setIsActive(isActive);
         employeeRepository.save(employee);
     }
 
     @Override
-    public Employee updateEmployeeType(Integer id, EmployeeType employeeType) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("employee", "id", id));
+    @Transactional
+    public void updateEmployeeRole(String email, Integer roleId) {
+        Optional<Employee> optionalEmployee = employeeRepository.findByEmail(email);
 
-        employee.setEmployeeType(employeeType);
+        if (optionalEmployee.isEmpty()) {
+            throw new RuntimeException("Employee with email " + email + " not found.");
+        }
+
+        Employee employee = optionalEmployee.get();
+        Optional<RoleMaster> optionalRole = roleMasterRepository.findById(roleId);
+
+        if (optionalRole.isEmpty()) {
+            throw new RuntimeException("Role with ID " + roleId + " not found.");
+        }
+
+        // Assign the role to the employee and update the employee
+        employee.setRole(optionalRole.get());
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
-        return employeeRepository.save(employee); // Return the updated employee
+
+        // Save the updated employee with the new role and return it
+        employeeRepository.save(employee);
     }
 
+    // New methods
+    @Override
+    public List<Employee> getEmployeesByRoleIsNullById(Integer id) {
+        return employeeRepository.findByIdAndRoleIsNull(id);
+    }
+
+    @Override
+    public List<Employee> getEmployeesByRoleIsNull() {
+        return employeeRepository.findByRoleIsNull();
+    }
+
+    @Override
+    public List<Employee> getAllWithoutNullRole() {
+        return employeeRepository.findAllByRoleIsNotNull();
+    }
+
+    @Override
+    public long countEmployeesByRoleNull() {
+        return employeeRepository.countByRoleIsNull();
+    }
+
+    @Override
+    public long countEmployeesByRoleNotNull() {
+        return employeeRepository.countByRoleIsNotNull();
+    }
+
+    @Override
+    public long countEmployeesByRole(String roleName) {
+        RoleMaster role = roleMasterRepository.findByRole(roleName)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+        return employeeRepository.countByRole(role);
+    }
+
+    @Override
+    public List<Employee> findEmployeesByRole(String roleName) {
+        RoleMaster role = roleMasterRepository.findByRole(roleName)
+                .orElseThrow(() -> new RuntimeException("Role not found: " + roleName));
+        return employeeRepository.findByRole(role);
+    }
 }

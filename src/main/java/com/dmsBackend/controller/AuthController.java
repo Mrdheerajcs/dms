@@ -1,7 +1,7 @@
 package com.dmsBackend.controller;
 
 import com.dmsBackend.entity.Employee;
-import com.dmsBackend.entity.EmployeeType;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.security.EmailService;
 import com.dmsBackend.security.JwtUtil;
 import com.dmsBackend.security.OtpService;
@@ -17,6 +17,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/auth")
@@ -45,53 +47,85 @@ public class AuthController {
         logger.info("User {} is attempting to login.", authRequest.getEmail());
 
         try {
+            // Authenticate employee credentials (email and password)
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(authRequest.getEmail(), authRequest.getPassword())
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
+            // Find employee by email with roles
             Employee employee = employeeService.findByEmail(authRequest.getEmail());
             if (employee == null) {
                 return createErrorResponse("Employee not found.");
             }
 
-            // Check if the employee type is assigned
-            if (employee.getEmployeeType() == null) {
-                return createErrorResponse("Employee Type not assigned. Please contact Admin.");
+            // Check if the employee has roles assigned
+            if (employee.getRole() == null) {
+                throw new IllegalStateException("Employee must have a role to log in.");
             }
 
-            return sendOtpForLogin(employee, authRequest.getEmail());
+            // Get the employee's primary role
+            RoleMaster primaryRole = employee.getRole();
+            String role = primaryRole != null ? primaryRole.getRole() : "Unknown";
+
+            if ("Unknown".equals(role)) {
+                return createErrorResponse("Employee's role is not found.");
+            }
+
+            // Send OTP for login as part of 2FA
+            return sendOtpForLogin(employee, authRequest.getEmail(), role);
         } catch (BadCredentialsException e) {
             logger.error("Invalid login attempt for user {}: {}", authRequest.getEmail(), e.getMessage());
             return createErrorResponse("Invalid username or password.");
         }
     }
-
-    private ResponseEntity<?> sendOtpForLogin(Employee employee, String email) {
-        String otp = otpService.generateOtp(email);
-        emailService.sendOtp(email, otp);
-
-        String message = "OTP sent to " + employee.getEmployeeType().name() + " email.";
-        return ResponseEntity.ok(new AuthResponse(null, message, employee.getEmployeeType(), employee.getName()));
-    }
-
     @PostMapping("/verifyOtp")
-    public ResponseEntity<?> verifyOtp(@RequestBody OtpRequest otpRequest) {
+    public ResponseEntity<?> verifyOtp(@RequestBody @Valid OtpRequest otpRequest) {
+        // Validate the OTP entered by the employee
         boolean isValid = otpService.validateOtp(otpRequest.getEmail(), otpRequest.getOtp());
 
         if (!isValid) {
             return createErrorResponse("Invalid OTP.");
         }
 
+        // Fetch employee details after OTP validation
         Employee employee = employeeService.findByEmail(otpRequest.getEmail());
-        if (employee == null) {
-            return createErrorResponse("Employee not found.");
+
+        RoleMaster role = employee.getRole();
+
+        if (role == null) {
+            return createErrorResponse("Employee's role not found.");
         }
 
-        String token = jwtUtil.generateToken(employee.getEmail(), employee.getEmployeeType().name());
-        otpService.clearOtp(otpRequest.getEmail()); // Clear OTP after successful validation
+        String roles = role.getRole(); // Get the role name
 
-        return ResponseEntity.ok(new AuthResponse(token, "OTP verified successfully.", employee.getEmployeeType(), employee.getName()));
+        if (roles.isEmpty()) {
+            return createErrorResponse("Employee's role is empty.");
+        }
+
+
+        // Generate a JWT token with the employee's email, roles, name, and ID
+        String token = jwtUtil.generateToken(employee.getEmail(), roles, employee.getName(), employee.getId());
+
+        // Clear OTP after successful validation
+        otpService.clearOtp(otpRequest.getEmail());
+
+        // Return the JWT token and employee details to the frontend
+        return ResponseEntity.ok(new AuthResponse(token, "OTP verified successfully.", roles, employee.getName(), employee.getId()));
+    }
+
+    // Helper method to handle OTP sending logic
+    private ResponseEntity<?> sendOtpForLogin(Employee employee, String email, String roles) {
+        // Generate OTP
+        String otp = otpService.generateOtp(email);
+
+        // Send OTP via email
+        emailService.sendOtp(email, otp);
+
+        String message = "OTP sent to email for roles: " + roles;
+
+        // Return a response to the frontend with a success message
+        return ResponseEntity.ok(new AuthResponse(null, message, roles, employee.getName(), employee.getId()));
     }
 
     // Centralized error response method
@@ -154,16 +188,18 @@ public class AuthController {
     }
 
     public static class AuthResponse {
-        private String token;  // JWT token for users
-        private String message; // Optional message for response
-        private EmployeeType employeeType; // Store the employee type
-        private String name; // Store the employee name
+        private String token;
+        private String message;
+        private String roles;
+        private String name;
+        private Integer id;
 
-        public AuthResponse(String token, String message, EmployeeType employeeType, String name) {
+        public AuthResponse(String token, String message, String roles, String name, Integer id) {
             this.token = token;
             this.message = message;
-            this.employeeType = employeeType;
+            this.roles = roles;
             this.name = name;
+            this.id = id;
         }
 
         // Getters and Setters
@@ -183,12 +219,12 @@ public class AuthController {
             this.message = message;
         }
 
-        public EmployeeType getEmployeeType() {
-            return employeeType;
+        public String getRoles() {
+            return roles;
         }
 
-        public void setEmployeeType(EmployeeType employeeType) {
-            this.employeeType = employeeType;
+        public void setRoles(String roles) {
+            this.roles = roles;
         }
 
         public String getName() {
@@ -197,6 +233,14 @@ public class AuthController {
 
         public void setName(String name) {
             this.name = name;
+        }
+
+        public Integer getId() {
+            return id;
+        }
+
+        public void setId(Integer id) {
+            this.id = id;
         }
     }
 }

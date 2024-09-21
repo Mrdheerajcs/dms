@@ -1,18 +1,19 @@
 package com.dmsBackend.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.Timestamp;
 import java.util.Collection;
-import java.util.Set;
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Entity
-@Data
+@Data // Lombok will generate getters, setters, toString, equals, and hashCode
+@NoArgsConstructor // Generates a no-args constructor
+@AllArgsConstructor // Optional: Generates a constructor with all fields
 public class Employee implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,18 +29,14 @@ public class Employee implements UserDetails {
     @Column(name = "mobile")
     private String mobile;
 
-    @Column(name = "email", unique = true) // Ensure email is unique
+    @Column(name = "email", unique = true)
     private String email;
 
     @Column(name = "name")
     private String name;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "employee_type")
-    private EmployeeType employeeType; // Field for employee type (Admin/User)
-
     @Column(name = "isActive")
-    private int isActive;
+    private boolean isActive;
 
     @Column(name = "otp")
     private int otp;
@@ -58,19 +55,21 @@ public class Employee implements UserDetails {
     @JoinColumn(name = "department_master_branch_Master_Id")
     private BranchMaster branch;
 
-    @ManyToMany(fetch = FetchType.EAGER)
-    @JoinTable(
-            name = "employee_roles",
-            joinColumns = @JoinColumn(name = "employee_id"),
-            inverseJoinColumns = @JoinColumn(name = "role_id")
-    )
-    private Set<RoleMaster> roles;
+    // Role is nullable to allow registration without a role,
+    // but later can be updated when assigning a role after registration.
+    @ManyToOne
+    @JoinColumn(name = "role_id", nullable = true) // Role is nullable by default
+    private RoleMaster role;
 
+    // Get authorities based on role
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return this.roles.stream()
-                .map(role -> new SimpleGrantedAuthority(role.getRole())) // Assuming RoleMaster has a 'getRole()' method
-                .collect(Collectors.toList());
+        // Check if role is not null and provide authorities accordingly
+        if (this.role != null && this.role.getRole() != null) {
+            return List.of(new SimpleGrantedAuthority(this.role.getRole()));
+        }
+        // If role is null, return an empty list (no authorities)
+        return List.of();
     }
 
     @Override
@@ -95,6 +94,6 @@ public class Employee implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return this.isActive == 1; // Assuming 1 means active, 0 means inactive
+        return this.isActive; // Assuming isActive indicates if the account is enabled
     }
 }

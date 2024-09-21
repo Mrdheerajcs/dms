@@ -1,5 +1,6 @@
 package com.dmsBackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.sql.Timestamp;
@@ -10,56 +11,49 @@ public class DocumentHeader {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", nullable = false)
     private Integer id;
 
-    @Column(name = "title")
+    @Column(nullable = false)
     private String title;
 
-    @Column(name = "fileNo")
-    private String fileNo;
+    @Column(name = "file_no", nullable = false)
+    private String fileNo; // Make sure this is not nullable
 
-    @Column(name="is_Active")
-    private int isActive;
-
-    @Column(name = "subject")
+    @Column(nullable = false)
     private String subject;
 
-    @Column(name = "version")
+    @Column(nullable = false)
     private String version;
 
-    @Column(name="createdOn")
-    private Timestamp createdOn;
-    @Column(name = "updatedOn")
-    private Timestamp updatedOn;
-
-    @Column(name = "is_Approved")
-    private boolean isApproved;
+    @ManyToOne
+    @JoinColumn(name = "category_id", referencedColumnName = "id")
+    private CategoryMaster categoryMaster;
 
     @ManyToOne
-    @JoinColumn(name = "category_master_id")
-    private CategoryMaster category;
-
-    @ManyToOne
-    @JoinColumn(name = "year_master_id")
-    private YearMaster year;
-
-    @ManyToOne
-    @JoinColumn(name = "type_master_id")
-    private TypeMaster type;
-
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
+    @JoinColumn(name = "employee_id", referencedColumnName = "id", nullable = false)
     private Employee employee;
 
-    @ManyToOne
-    @JoinColumn(name = "Employee_department_master_Id")
-    private DepartmentMaster department;
-
-    @ManyToOne
-    @JoinColumn(name = "Employee_department_master_branch_Master_Id")
-    private BranchMaster branch;
+    @ManyToOne     // New ADd for Admin
+    @JoinColumn(name = "approval_status_by_id", referencedColumnName = "id", nullable = true)
+    private Employee employeeBy;
 
 
+    @Column(name = "created_on", nullable = false, updatable = false)
+    private Timestamp createdOn;
 
+    @Column(name = "updated_on")
+    private Timestamp updatedOn;
+
+    @Column(name = "approval_status_on" , nullable = true)  //New Add for Admin
+    private Timestamp approvalStatusOn;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean active;
+
+    @Enumerated(EnumType.STRING)  // Use STRING for better readability in the database
+    @Column(name = "approval_status", nullable = false)
+    private DocApprovalStatus approvalStatus;
+
+    @Column(name = "rejection_reason")
+    private String rejectionReason;
 }

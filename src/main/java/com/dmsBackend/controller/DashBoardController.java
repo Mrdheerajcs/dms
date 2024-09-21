@@ -17,8 +17,9 @@ public class DashBoardController {
     DashboardService dashboardService;
 
     @GetMapping("GetAllCountsForDashBoard")
-    public ResponseEntity<DashboardResponse> getAllDashBoardCounts() {
-        DashboardResponse dashboardResponse = this.dashboardService.getAllUsers();
-        return new ResponseEntity<DashboardResponse>(dashboardResponse, HttpStatus.OK);
+    public ResponseEntity<DashboardResponse> getAllDashBoardCounts(@RequestParam String employeeId) {
+        DashboardResponse dashboardResponse = this.dashboardService.getAllUsers(employeeId);
+        return new ResponseEntity<>(dashboardResponse, HttpStatus.OK);
     }
+
 }
