@@ -1,6 +1,7 @@
 package com.dmsBackend.service;
 
 import com.dmsBackend.entity.Employee;
+import jakarta.transaction.Transactional;
 
 import java.util.List;
 
@@ -11,7 +12,9 @@ public interface EmployeeService {
     void deleteByIdEmployee(Integer id);
     List<Employee> findAllEmployee();
     void updateEmployeeStatus(Integer id, boolean isActive);
-    void updateEmployeeRole(String email, Integer roleId);
+    void updateEmployeeRoleByEmail(String email, Integer roleId);
+
+    void updateEmployeeRoleById(Integer id, Integer roleId);
 
     // New methods
     List<Employee> getEmployeesByRoleIsNullById(Integer id);

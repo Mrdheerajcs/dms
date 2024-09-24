@@ -61,6 +61,15 @@ public class Employee implements UserDetails {
     @JoinColumn(name = "role_id", nullable = true) // Role is nullable by default
     private RoleMaster role;
 
+
+    @ManyToOne
+    @JoinColumn(name = "created_by_id") // New field to track who created the record
+    private Employee createdBy;
+
+    @ManyToOne
+    @JoinColumn(name = "updated_by_id") // New field to track who updated the record
+    private Employee updatedBy;
+
     // Get authorities based on role
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
