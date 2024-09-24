@@ -48,7 +48,13 @@ public class BranchMasterController {
         List<BranchMaster> allBranchMaster = this.branchMasterService.findAllBranchMaster();
         return new ResponseEntity(allBranchMaster, HttpStatus.OK);
     }
-    
+
+
+    @GetMapping("/findActiveRole")
+    public ResponseEntity<List<BranchMaster>>findAllActiveRole(){
+        List<BranchMaster>allActiveBranchMaster = this.branchMasterService.findAllActiveBranchMaster(1);
+        return new ResponseEntity<>(allActiveBranchMaster, HttpStatus.OK);
+    }
 
     @GetMapping("/findById/{id}")
     public ResponseEntity<BranchMaster> findByIdBranchMaster(@PathVariable Integer id) {

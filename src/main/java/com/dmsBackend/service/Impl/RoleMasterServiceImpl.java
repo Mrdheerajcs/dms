@@ -58,6 +58,11 @@ public class RoleMasterServiceImpl implements RoleMasterService {
         return roleMasterRepository.findById(id);
     }
 
+    @Override
+    public List<RoleMaster> findAllActiveRoleMaster(boolean isActive) {
+        return roleMasterRepository.findByIsActive(isActive);
+    }
+
     public Optional<RoleMaster> findRoleByName(String name) {
         return roleMasterRepository.findByRole(name);
     }

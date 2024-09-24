@@ -2,6 +2,7 @@ package com.dmsBackend.service.Impl;
 
 import com.dmsBackend.entity.BranchMaster;
 import com.dmsBackend.entity.DepartmentMaster;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.Helper;
 import com.dmsBackend.repository.BranchMasterRepository;
@@ -61,6 +62,11 @@ public class DepartmentMasterServiceImpl implements DepartmentMasterService {
     @Override
     public List<DepartmentMaster> findAllDepartmentMaster() {
         return departmentMasterRepository.findAll();
+    }
+
+    @Override
+    public List<DepartmentMaster> findAllActiveDepartmentMaster(Integer isActive) {
+        return departmentMasterRepository.findByIsActive(isActive);
     }
 
     @Override

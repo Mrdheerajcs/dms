@@ -2,6 +2,7 @@ package com.dmsBackend.controller;
 
 
 import com.dmsBackend.entity.DepartmentMaster;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.ApiResponse;
 import com.dmsBackend.service.DepartmentMasterService;
@@ -46,6 +47,12 @@ public class DepartmentMasterController {
     public ResponseEntity<List<DepartmentMaster>> findAllBranchMaster() {
         List<DepartmentMaster> allDepartmentMasterMaster = this.departmentMasterService.findAllDepartmentMaster();
         return new ResponseEntity(allDepartmentMasterMaster, HttpStatus.OK);
+    }
+
+    @GetMapping("/findActiveRole")
+    public ResponseEntity<List<DepartmentMaster>>findAllActiveRole(){
+        List<DepartmentMaster>allActiveDeptMaster = this.departmentMasterService.findAllActiveDepartmentMaster(1);
+        return new ResponseEntity<>(allActiveDeptMaster, HttpStatus.OK);
     }
 
 

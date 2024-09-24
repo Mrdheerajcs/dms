@@ -241,18 +241,34 @@ public class DocumentController {
 
     // ================== DocumentDetails (File Upload) Operations ================== //
 
+//    @PostMapping("/upload")
+//    public ResponseEntity<List<String>> uploadFiles(
+//            @RequestParam("files") List<MultipartFile> files,
+//            @RequestParam("category") String category) { // Add category parameter
+//        try {
+//            // Call service method to upload files with the category
+//            List<String> filePaths = documentDetailsService.uploadFiles(files, category);
+//            return ResponseEntity.ok(filePaths);  // Return the file paths
+//        } catch (RuntimeException e) {
+//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonList(e.getMessage()));
+//        }
+//    }
+
+
     @PostMapping("/upload")
     public ResponseEntity<List<String>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
-            @RequestParam("category") String category) { // Add category parameter
+            @RequestParam("category") String category) {  // Add category parameter back
         try {
-            // Call service method to upload files with the category
+            // Call the service method to upload files with the category
             List<String> filePaths = documentDetailsService.uploadFiles(files, category);
             return ResponseEntity.ok(filePaths);  // Return the file paths
         } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonList(e.getMessage()));
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Collections.singletonList("Error uploading files: " + e.getMessage()));
         }
     }
+
 
     // You can add more endpoints for retrieving DocumentDetails if needed
 }

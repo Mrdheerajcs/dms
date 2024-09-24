@@ -64,7 +64,7 @@ public class DocumentDetailsServiceImpl implements DocumentDetailsService {
 
                     // Save file to disk
                     file.transferTo(serverFile);
-                    filePaths.add(filePath);
+                    filePaths.add(filePath);  // Add the file path to the list
                 } catch (IOException e) {
                     logger.error("Failed to upload file: " + file.getOriginalFilename(), e);
                     throw new RuntimeException("Failed to upload file: " + file.getOriginalFilename(), e);

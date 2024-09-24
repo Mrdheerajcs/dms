@@ -11,6 +11,8 @@ public interface DepartmentMasterService {
     DepartmentMaster updateDepartmentMaster(DepartmentMaster departmentMaster,Integer id);
     void deleteByIdDepartmentMaster(Integer id);
     List<DepartmentMaster> findAllDepartmentMaster();
+    List<DepartmentMaster> findAllActiveDepartmentMaster(Integer isActive);
+
     Optional<DepartmentMaster> findDepartmentMasterById(Integer id);
 
     DepartmentMaster findByIdDep(Integer id);

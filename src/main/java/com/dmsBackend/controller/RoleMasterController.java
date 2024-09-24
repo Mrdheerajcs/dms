@@ -48,6 +48,11 @@ public class RoleMasterController {
         return new ResponseEntity(allRoleMaster, HttpStatus.OK);
     }
 
+    @GetMapping("/findActiveRole")
+    public ResponseEntity<List<RoleMaster>>findAllActiveRole(){
+        List<RoleMaster>allActiveRoleMaster = this.roleMasterService.findAllActiveRoleMaster(true);
+        return new ResponseEntity<>(allActiveRoleMaster, HttpStatus.OK);
+    }
 
     @GetMapping("/findById/{id}")
     public ResponseEntity<RoleMaster> findByIdRoleMaster(@PathVariable Integer id) {
