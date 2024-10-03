@@ -12,6 +12,9 @@ public interface CategoryMasterService {
     CategoryMaster updateCategoryMaster(CategoryMaster categoryMaster,Integer id);
     void deleteByIdCategoryMaster(Integer id);
     List<CategoryMaster> findAllCategoryMaster();
+
+    List<CategoryMaster> findAllActiveCategoryMaster(boolean active);
+
     Optional<CategoryMaster> findCategoryMasterById(Integer id);
     CategoryMaster findByIdCate(Integer id);
     CategoryMaster updateStatus(Integer id, boolean  isActive);

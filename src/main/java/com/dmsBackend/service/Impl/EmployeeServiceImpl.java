@@ -64,6 +64,35 @@ public class EmployeeServiceImpl implements EmployeeService {
 //    }
 
 
+    //create branch admin by system admin
+    @Override
+    @Transactional
+    public Employee create(Employee employee) {
+        // Set timestamps
+        employee.setCreatedOn(Helper.getCurrentTimeStamp());
+        employee.setUpdatedOn(Helper.getCurrentTimeStamp());
+
+        // Generate and set employee ID if needed
+        // employee.setEmployeeId(employeeIdGenerator.generateEmployeeId());
+
+        // Find and set branch
+        if (employee.getBranch() != null && employee.getBranch().getId() != null) {
+            BranchMaster branchMaster = branchMasterRepository.findById(employee.getBranch().getId())
+                    .orElseThrow(() -> new RuntimeException("Branch Not Found"));
+            employee.setBranch(branchMaster);
+        }
+
+        employee.setActive(true);
+
+        // Encode the password before saving
+        employee.setPassword(passwordEncoder.encode(employee.getPassword()));
+
+        // Save the employee
+        Employee savedEmployee = employeeRepository.save(employee);
+
+        return savedEmployee;
+    }
+
     @Override
     @Transactional
     public Employee save(Employee employee) {
@@ -108,6 +137,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
         return savedEmployee;
     }
+
     @Override
     public Employee findByEmail(String email) {
         return employeeRepository.findByEmail(email)
@@ -139,6 +169,54 @@ public class EmployeeServiceImpl implements EmployeeService {
         employeeRepository.save(employee);
     }
 
+//    @Override
+//    public void updateEmployeeRoleById(Integer id, Integer roleId) {
+//        Optional<Employee> optionalEmployee = employeeRepository.findById(id);
+//
+//        if (optionalEmployee.isEmpty()) {
+//            throw new RuntimeException("Employee with ID " + id + " not found.");
+//        }
+//
+//        Employee employee = optionalEmployee.get();
+//        Optional<RoleMaster> optionalRole = roleMasterRepository.findById(roleId);
+//
+//        if (optionalRole.isEmpty()) {
+//            throw new RuntimeException("Role with ID " + roleId + " not found.");
+//        }
+//
+//        // Assign the role to the employee and update the employee
+//        employee.setRole(optionalRole.get());
+//        employee.setUpdatedOn(Helper.getCurrentTimeStamp());
+//
+//        // Save the updated employee with the new role
+//        employeeRepository.save(employee);
+//    }
+//
+//    @Override
+//    public void updateEmployeeRoleByEmail(String email, Integer roleId) {
+//        Optional<Employee> optionalEmployee = employeeRepository.findByEmail(email);
+//
+//        if (optionalEmployee.isEmpty()) {
+//            throw new RuntimeException("Employee with email " + email + " not found.");
+//        }
+//
+//        Employee employee = optionalEmployee.get();
+//        Optional<RoleMaster> optionalRole = roleMasterRepository.findById(roleId);
+//
+//        if (optionalRole.isEmpty()) {
+//            throw new RuntimeException("Role with ID " + roleId + " not found.");
+//        }
+//
+//        // Assign the role to the employee and update the employee
+//        employee.setRole(optionalRole.get());
+//        employee.setUpdatedOn(Helper.getCurrentTimeStamp());
+//
+//        // Save the updated employee with the new role
+//        employeeRepository.save(employee);
+//    }
+
+
+    @Override
     public void updateEmployeeRoleById(Integer id, Integer roleId) {
         Optional<Employee> optionalEmployee = employeeRepository.findById(id);
 
@@ -153,14 +231,25 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new RuntimeException("Role with ID " + roleId + " not found.");
         }
 
+        RoleMaster newRole = optionalRole.get();
+
+        // Check if the new role is 'admin' and if the employee's branch already has an admin
+        if (newRole.getRole().equalsIgnoreCase("ADMIN")) {
+            Optional<Employee> existingAdmin = employeeRepository.findByRoleAndBranch(newRole, employee.getBranch());
+            if (existingAdmin.isPresent() && !existingAdmin.get().getId().equals(employee.getId())) {
+                throw new RuntimeException("There is already an admin assigned to this branch.");
+            }
+        }
+
         // Assign the role to the employee and update the employee
-        employee.setRole(optionalRole.get());
+        employee.setRole(newRole);
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
 
         // Save the updated employee with the new role
         employeeRepository.save(employee);
     }
 
+    @Override
     public void updateEmployeeRoleByEmail(String email, Integer roleId) {
         Optional<Employee> optionalEmployee = employeeRepository.findByEmail(email);
 
@@ -175,14 +264,28 @@ public class EmployeeServiceImpl implements EmployeeService {
             throw new RuntimeException("Role with ID " + roleId + " not found.");
         }
 
+        RoleMaster newRole = optionalRole.get();
+
+        // Check if the new role is 'admin' and if the employee's branch already has an admin
+        if (newRole.getRole().equalsIgnoreCase("ADMIN")) {
+            Optional<Employee> existingAdmin = employeeRepository.findByRoleAndBranch(newRole, employee.getBranch());
+            if (existingAdmin.isPresent() && !existingAdmin.get().getId().equals(employee.getId())) {
+                throw new RuntimeException("There is already an admin assigned to this branch.");
+            }
+        }
+
         // Assign the role to the employee and update the employee
-        employee.setRole(optionalRole.get());
+        employee.setRole(newRole);
         employee.setUpdatedOn(Helper.getCurrentTimeStamp());
 
         // Save the updated employee with the new role
         employeeRepository.save(employee);
     }
 
+    @Override
+    public List<Employee> findEmployeesByBranch(BranchMaster branch) {
+        return employeeRepository.findByBranch(branch);
+    }
 
     // New methods
     @Override

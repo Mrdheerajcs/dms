@@ -49,6 +49,11 @@ public class CategoryMasterServiceImpl implements CategoryMasterService {
     }
 
     @Override
+    public List<CategoryMaster> findAllActiveCategoryMaster(boolean active) {
+        return categoryMasterRepository.findByActive(active); // Use 'active'
+    }
+
+    @Override
     public Optional<CategoryMaster> findCategoryMasterById(Integer id) {
         return categoryMasterRepository.findById(id);
     }

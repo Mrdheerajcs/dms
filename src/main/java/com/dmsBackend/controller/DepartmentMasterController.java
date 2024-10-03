@@ -68,4 +68,9 @@ public class DepartmentMasterController {
         DepartmentMaster departmentMaster = this.departmentMasterService.updateStatusDepartment(id, isActive);
         return new ResponseEntity(departmentMaster, HttpStatus.OK);
     }
+
+    @GetMapping("/findByBranch/{branchId}")
+    public List<DepartmentMaster> findByBranch(@PathVariable Integer branchId) {
+        return departmentMasterService.findDepartmentMasterByBranch(branchId);
+    }
 }

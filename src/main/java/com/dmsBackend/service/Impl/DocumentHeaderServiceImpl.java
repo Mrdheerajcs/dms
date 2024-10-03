@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.TextStyle;
 import java.util.*;
@@ -69,17 +70,56 @@ public class DocumentHeaderServiceImpl implements DocumentHeaderService {
     }
 
     //Update Document
-    @Override
-    public DocumentHeader updateDocumentHeader(Integer id, DocumentHeader updatedDocument) {
-        DocumentHeader existingDocument = documentHeaderRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("DocumentHeader not found with id " + id));
+//    @Override
+//    public DocumentHeader updateDocumentHeader(Integer id, DocumentHeader updatedDocument) {
+//        DocumentHeader existingDocument = documentHeaderRepository.findById(id)
+//                .orElseThrow(() -> new ResourceNotFoundException("DocumentHeader not found with id " + id));
+//
+//        existingDocument.setFileNo(updatedDocument.getFileNo());
+//        existingDocument.setTitle(updatedDocument.getTitle());
+//        existingDocument.setSubject(updatedDocument.getSubject());
+//        existingDocument.setVersion(updatedDocument.getVersion());
+//        existingDocument.setCategoryMaster(updatedDocument.getCategoryMaster());
+//        existingDocument.setUpdatedOn(new Timestamp(System.currentTimeMillis()));
+//
+//        return documentHeaderRepository.save(existingDocument);
+//    }
 
-        existingDocument.setTitle(updatedDocument.getTitle());
-        existingDocument.setFileNo(updatedDocument.getFileNo());
-        existingDocument.setSubject(updatedDocument.getSubject());
-        existingDocument.setVersion(updatedDocument.getVersion());
+
+    @Override
+    public DocumentHeader updateDocumentHeader(DocumentHeader documentHeader) {
+        // Check if the document exists before updating
+        DocumentHeader existingDocument = documentHeaderRepository.findById(documentHeader.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Document not found with id " + documentHeader.getId()));
+
+        if (documentHeader.getCreatedOn() == null) {
+            documentHeader.setCreatedOn(Timestamp.from(Instant.now()));  // Setting createdOn to the current timestamp
+        }
+
+        // Always update the updatedOn field to the current timestamp
+        documentHeader.setUpdatedOn(Timestamp.from(Instant.now()));
+
+        // Check for null relations like categoryMaster, employee, etc.
+        if (documentHeader.getCategoryMaster() == null) {
+            throw new IllegalArgumentException("CategoryMaster is required");
+        }
+        // Check if category exists
+        if (documentHeader.getCategoryMaster() != null && documentHeader.getCategoryMaster().getId() != null) {
+            CategoryMaster categoryMaster = categoryMasterRepository.findById(documentHeader.getCategoryMaster().getId())
+                    .orElseThrow(() -> new ResourceNotFoundException("CategoryMaster not found with id " + documentHeader.getCategoryMaster().getId()));
+            existingDocument.setCategoryMaster(categoryMaster);
+        } else {
+            throw new IllegalArgumentException("CategoryMaster ID must not be null");
+        }
+
+        // Update fields
+        existingDocument.setFileNo(documentHeader.getFileNo());
+        existingDocument.setTitle(documentHeader.getTitle());
+        existingDocument.setSubject(documentHeader.getSubject());
+        existingDocument.setVersion(documentHeader.getVersion());
         existingDocument.setUpdatedOn(new Timestamp(System.currentTimeMillis()));
 
+        // Return the updated document
         return documentHeaderRepository.save(existingDocument);
     }
 
@@ -341,6 +381,12 @@ public class DocumentHeaderServiceImpl implements DocumentHeaderService {
         return response;
     }
 
+
+//    @Override
+//    public DocumentHeader getDocumentHeaderById(Integer headerId) {
+//        return documentHeaderRepository.findById(headerId)
+//                .orElseThrow(() -> new ResourceNotFoundException("DocumentHeader not found for id: " + headerId));
+//    }
 
 
 }

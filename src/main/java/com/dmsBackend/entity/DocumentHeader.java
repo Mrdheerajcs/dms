@@ -1,12 +1,15 @@
 package com.dmsBackend.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.sql.Timestamp;
+import java.util.List;
 
 @Entity
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DocumentHeader {
 
     @Id
@@ -37,6 +40,9 @@ public class DocumentHeader {
     @JoinColumn(name = "approval_status_by_id", referencedColumnName = "id", nullable = true)
     private Employee employeeBy;
 
+    @OneToMany(mappedBy = "documentHeader", fetch = FetchType.LAZY)
+    @JsonIgnoreProperties("documentHeader")  // Ignore back reference to prevent infinite loop
+    private List<DocumentDetails> documentDetails;
 
     @Column(name = "created_on", nullable = false, updatable = false)
     private Timestamp createdOn;

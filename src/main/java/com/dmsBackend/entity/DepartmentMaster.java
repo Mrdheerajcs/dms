@@ -1,5 +1,6 @@
 package com.dmsBackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.springframework.data.repository.cdi.Eager;
@@ -28,8 +29,13 @@ public class DepartmentMaster {
     @Column(name="is_Active")
     private int isActive;
 
+//    @ManyToOne(fetch = FetchType.EAGER)
+//    @JoinColumn(name = "branch_master_id", referencedColumnName = "id")
+//    private BranchMaster branch;
+
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "branch_master_id")
+    @JoinColumn(name = "branch_master_id", referencedColumnName = "id")
+    @JsonBackReference // Prevent recursion
     private BranchMaster branch;
 
 //    @OneToMany(mappedBy = "department")

@@ -2,6 +2,8 @@ package com.dmsBackend.entity;
 
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -33,9 +35,15 @@ public class BranchMaster {
     private Timestamp updatedOn;
 
 //    @OneToMany(mappedBy = "branch")
+//    @JsonManagedReference
 //    private List<Employee> employees;
-//
-//    @OneToMany(mappedBy = "branch")
-//    private List<DepartmentMaster> departments;
+
+    @OneToMany(mappedBy = "branch", cascade = CascadeType.ALL)
+    @JsonIgnore // Prevents serialization of employees to avoid recursion
+    private List<Employee> employees;
+
+    @OneToMany(mappedBy = "branch")
+    @JsonManagedReference // Break the recursive serialization
+    private List<DepartmentMaster> departments;
 
 }

@@ -12,7 +12,7 @@ public class CategoryMaster {
     private Integer id;
 
     @Column(name = "is_active")
-    private boolean active; // Use boolean here instead of int
+    private boolean active;
 
     @Column(name = "name")
     private String name;

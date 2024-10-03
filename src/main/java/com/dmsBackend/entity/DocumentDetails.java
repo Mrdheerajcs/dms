@@ -1,11 +1,13 @@
 package com.dmsBackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.sql.Timestamp;
 
 @Entity
 @Data
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class DocumentDetails {
 
     @Id
@@ -26,6 +28,7 @@ public class DocumentDetails {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "document_header_id", nullable = false)
+    @JsonIgnoreProperties({"documentDetails"})
     private DocumentHeader documentHeader;
 
 }

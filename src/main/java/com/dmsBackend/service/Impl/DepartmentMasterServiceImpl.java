@@ -65,6 +65,11 @@ public class DepartmentMasterServiceImpl implements DepartmentMasterService {
     }
 
     @Override
+    public List<DepartmentMaster> findDepartmentMasterByBranch(Integer branchId) {
+        // Call the repository method to fetch departments by branch ID
+        return departmentMasterRepository.findByBranchId(branchId);
+    }
+    @Override
     public List<DepartmentMaster> findAllActiveDepartmentMaster(Integer isActive) {
         return departmentMasterRepository.findByIsActive(isActive);
     }

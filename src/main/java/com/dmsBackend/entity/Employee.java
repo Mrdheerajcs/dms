@@ -1,5 +1,8 @@
 package com.dmsBackend.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,10 +14,12 @@ import java.util.Collection;
 import java.util.List;
 
 @Entity
-@Data // Lombok will generate getters, setters, toString, equals, and hashCode
-@NoArgsConstructor // Generates a no-args constructor
-@AllArgsConstructor // Optional: Generates a constructor with all fields
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Employee implements UserDetails {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -47,37 +52,49 @@ public class Employee implements UserDetails {
     @Column(name = "updatedOn")
     private Timestamp updatedOn;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "department_master_branch_master_id", referencedColumnName = "id")
+    private BranchMaster branch;
+
+
+    @ManyToOne(fetch = FetchType.EAGER) // Fetch DepartmentMaster eagerly
     @JoinColumn(name = "department_master_id")
     private DepartmentMaster department;
 
-    @ManyToOne
-    @JoinColumn(name = "department_master_branch_Master_Id")
-    private BranchMaster branch;
-
-    // Role is nullable to allow registration without a role,
-    // but later can be updated when assigning a role after registration.
-    @ManyToOne
-    @JoinColumn(name = "role_id", nullable = true) // Role is nullable by default
+    @ManyToOne(fetch = FetchType.EAGER) // Fetch RoleMaster eagerly
+    @JoinColumn(name = "role_id")
     private RoleMaster role;
 
-
     @ManyToOne
-    @JoinColumn(name = "created_by_id") // New field to track who created the record
-    private Employee createdBy;
+    @JoinColumn(name = "category_master_id")  // New mapping for CategoryMaster
+    @JsonIgnore
+    private CategoryMaster category;
 
-    @ManyToOne
-    @JoinColumn(name = "updated_by_id") // New field to track who updated the record
+//    @ManyToOne(fetch = FetchType.EAGER) // Fetch createdBy eagerly
+//    @JoinColumn(name = "created_by_id")
+//    private Employee createdBy;
+//
+//    @ManyToOne(fetch = FetchType.EAGER) // Fetch updatedBy eagerly
+//    @JoinColumn(name = "updated_by_id")
+//    private Employee updatedBy;
+
+
+    @ManyToOne(fetch = FetchType.EAGER) // Fetch updatedBy eagerly
+    @JoinColumn(name = "updated_by_id")
+    @JsonBackReference("employee-updatedBy")
     private Employee updatedBy;
 
-    // Get authorities based on role
+    @ManyToOne(fetch = FetchType.EAGER) // Fetch createdBy eagerly
+    @JoinColumn(name = "created_by_id")
+    @JsonBackReference("employee-createdBy")
+    private Employee createdBy;
+
+
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Check if role is not null and provide authorities accordingly
         if (this.role != null && this.role.getRole() != null) {
             return List.of(new SimpleGrantedAuthority(this.role.getRole()));
         }
-        // If role is null, return an empty list (no authorities)
         return List.of();
     }
 
@@ -103,6 +120,6 @@ public class Employee implements UserDetails {
 
     @Override
     public boolean isEnabled() {
-        return this.isActive; // Assuming isActive indicates if the account is enabled
+        return this.isActive;
     }
 }

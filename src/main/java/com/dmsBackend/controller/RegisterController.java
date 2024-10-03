@@ -108,6 +108,36 @@ public class RegisterController {
         }
     }
 
+    @PostMapping("/create")
+    @Transactional
+    public ResponseEntity<?> createEmployee(@RequestBody Employee employee) {
+        try {
+            // Generate and encode password
+            String generatedPassword = generatePassword(employee.getName(), employee.getMobile());
+            employee.setPassword(generatedPassword);
+
+            // Get the current logged-in admin user
+            User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+            Employee currentEmployee = employeeService.findByEmail(currentUser.getUsername());
+
+            if (currentEmployee == null) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Current user not found");
+            }
+
+            // Set creator and timestamps
+
+            // Save employee without role
+            Employee savedEmployee = employeeService.create(employee);
+
+            // Send email with the generated password
+            sendPasswordEmail(employee.getEmail(), generatedPassword);
+
+            return ResponseEntity.ok(savedEmployee);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving employee: " + e.getMessage());
+        }
+    }
+
 
     private String generatePassword(String username, String mobile) {
         String usernamePrefix = username.length() >= 4 ? username.substring(0, 4).toUpperCase() : username.toUpperCase();

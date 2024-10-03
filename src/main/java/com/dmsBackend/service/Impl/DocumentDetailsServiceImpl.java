@@ -37,9 +37,9 @@ public class DocumentDetailsServiceImpl implements DocumentDetailsService {
         String year = String.valueOf(LocalDate.now().getYear());
         String month = String.format("%02d", LocalDate.now().getMonthValue());
 
-        // Construct base directory based on year, month, and category
-        String baseDir = "D:\\Dheeraj_Codes\\Backend\\Java\\Projects\\dms\\DocumentServer"
-                + File.separator + year + File.separator + month + File.separator + category;
+        // Construct base directory using forward slashes
+        String baseDir = "D:/Dheeraj_Codes/Backend/Java/Projects/dms/DocumentServer"
+                + "/" + year + "/" + month + "/" + category;
 
         // Create the directory if it doesn't exist
         File directory = new File(baseDir);
@@ -59,7 +59,7 @@ public class DocumentDetailsServiceImpl implements DocumentDetailsService {
                     // Sanitize and rename the file to avoid collisions
                     String sanitizedFileName = System.currentTimeMillis() + "_"
                             + file.getOriginalFilename().replaceAll("[^a-zA-Z0-9.]", "_");
-                    String filePath = baseDir + File.separator + sanitizedFileName;
+                    String filePath = baseDir + "/" + sanitizedFileName; // Use forward slash
                     File serverFile = new File(filePath);
 
                     // Save file to disk
@@ -75,30 +75,86 @@ public class DocumentDetailsServiceImpl implements DocumentDetailsService {
         return filePaths;  // Return the paths of the uploaded files
     }
 
-
     @Override
     public void saveFileDetails(DocumentHeader documentHeader, List<String> filePaths) {
         for (String filePath : filePaths) {
             DocumentDetails documentDetails = new DocumentDetails();
 
-            // Set document name and file path
-            documentDetails.setDocName(filePath.substring(filePath.lastIndexOf(File.separator) + 1));
-            documentDetails.setPath(filePath);
-
-            // Check if documentHeader is provided, otherwise handle accordingly
-            if (documentHeader != null) {
-                documentDetails.setDocumentHeader(documentHeader);
-            }
+            // Extract the document name using forward slash
+            String documentName = filePath.substring(filePath.lastIndexOf('/') + 1);
+            documentDetails.setDocName(documentName); // Set the extracted document name
+            documentDetails.setPath(filePath); // Set the file path
+            documentDetails.setDocumentHeader(documentHeader); // Associate the document header
 
             // Set timestamps for created and updated on
             Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
-            documentDetails.setUpdatedOn(currentTimestamp);
             documentDetails.setCreatedOn(currentTimestamp);
+            documentDetails.setUpdatedOn(currentTimestamp);
 
             // Save each file's details into the database
             documentDetailsRepository.save(documentDetails);
         }
     }
+
+
+    @Override
+    public void updateFileDetails(DocumentHeader documentHeader, List<String> filePaths) {
+        // First, delete the existing file details for the document header
+        documentDetailsRepository.deleteByDocumentHeader(documentHeader);
+
+        // Then, save the new file details
+        for (String filePath : filePaths) {
+            DocumentDetails documentDetails = new DocumentDetails();
+
+            // Extract the document name using forward slash
+            String documentName = filePath.substring(filePath.lastIndexOf('/') + 1);
+            documentDetails.setDocName(documentName); // Set the extracted document name
+            documentDetails.setPath(filePath); // Set the file path
+            documentDetails.setDocumentHeader(documentHeader); // Associate the document header
+
+            // Set timestamps for created and updated on
+            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+            documentDetails.setCreatedOn(currentTimestamp);
+            documentDetails.setUpdatedOn(currentTimestamp);
+
+            // Save each file's details into the database
+            documentDetailsRepository.save(documentDetails);
+        }
+    }
+
+//    @Override
+//    public void saveFileDetails(DocumentHeader documentHeader, List<String> filePaths) {
+//        for (String filePath : filePaths) {
+//            DocumentDetails documentDetails = new DocumentDetails();
+//
+//            // Set document name and file path
+//            String documentName = filePath.substring(filePath.lastIndexOf(File.separator) + 1);
+//            documentDetails.setDocName(documentName);
+//            documentDetails.setPath(filePath);
+//
+//            // Check if documentHeader is provided, otherwise handle accordingly
+//            if (documentHeader != null) {
+//                documentDetails.setDocumentHeader(documentHeader);
+//            }
+//
+//            // Set timestamps for created and updated on
+//            Timestamp currentTimestamp = new Timestamp(System.currentTimeMillis());
+//            documentDetails.setUpdatedOn(currentTimestamp);
+//            documentDetails.setCreatedOn(currentTimestamp);
+//
+//            // Logging the document name before saving
+//            System.out.println("Saving document name: " + documentDetails.getDocName());
+//
+//            // Save each file's details into the database
+//            documentDetailsRepository.save(documentDetails);
+//        }
+//    }
+
+    @Override
+    public List<DocumentDetails> findDocumentsByHeaderId(Long headerId) {
+        return documentDetailsRepository.findByDocumentHeaderId(headerId);
+    }
+
 
 
 }

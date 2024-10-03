@@ -2,7 +2,13 @@ package com.dmsBackend.controller;
 
 import com.dmsBackend.entity.CategoryMaster;
 import com.dmsBackend.entity.DocApprovalStatus;
+import com.dmsBackend.entity.DocumentDetails;
 import com.dmsBackend.entity.DocumentHeader;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
 import java.sql.Timestamp;
 
 import com.dmsBackend.exception.ResourceConflictException;
@@ -13,7 +19,12 @@ import com.dmsBackend.service.DocumentDetailsService;
 import com.dmsBackend.service.DocumentHeaderService;
 import com.dmsBackend.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +34,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController
@@ -94,17 +108,53 @@ public class DocumentController {
 
 
 
-    // Update an existing DocumentHeader
-    @PutMapping("/update/{id}")
-    public ResponseEntity<?> updateDocumentHeader(@PathVariable Integer id,
-                                                  @RequestBody DocumentHeader updatedDocument) {
+    @PostMapping("/update")
+    public ResponseEntity<?> updateDocumentWithFiles(
+            @RequestBody DocumentSaveRequest documentSaveRequest) {
+        System.out.println("Received document: " + documentSaveRequest.getDocumentHeader());
+        System.out.println("Received file paths: " + documentSaveRequest.getFilePaths());
         try {
-            DocumentHeader documentHeader = documentHeaderService.updateDocumentHeader(id, updatedDocument);
-            return ResponseEntity.ok(documentHeader);
+            // Extract DocumentHeader and file paths from the request
+            DocumentHeader documentHeader = documentSaveRequest.getDocumentHeader();
+            List<String> filePaths = documentSaveRequest.getFilePaths();
+
+            // Update DocumentHeader
+            DocumentHeader updatedDocumentHeader = documentHeaderService.updateDocumentHeader(documentHeader);
+
+            // Update file details associated with the updated document header
+            documentDetailsService.updateFileDetails(updatedDocumentHeader, filePaths);
+
+            return ResponseEntity.ok("Document and files updated successfully");
+
+        } catch (ResourceConflictException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // Return 404 if not found
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error updating document and files");
         }
     }
+
+    // Update an existing DocumentHeader
+//    @PutMapping("/update/{id}")
+//    public ResponseEntity<?> updateDocumentHeader(@PathVariable Integer id,
+//                                                  @RequestBody DocumentHeader updatedDocument) {
+//        try {
+//            // Log incoming request for debugging
+//            System.out.println("Updating DocumentHeader with ID: " + id);
+//            System.out.println("Incoming DocumentHeader: " + updatedDocument);
+//
+//            DocumentHeader documentHeader = documentHeaderService.updateDocumentHeader(id, updatedDocument);
+//            return ResponseEntity.ok(documentHeader);
+//        } catch (ResourceNotFoundException e) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage()); // Return 404 if not found
+//        } catch (Exception e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the document."); // Handle other exceptions
+//        }
+//    }
+
 
     //get all enum
     @GetMapping("/docApprovalStatuses")
@@ -222,6 +272,13 @@ public class DocumentController {
     }
 
 
+    @GetMapping("/byDocumentHeader/{id}")
+    public ResponseEntity<List<DocumentDetails>> getDocumentsByHeader(@PathVariable Long id) {
+        List<DocumentDetails> documents = documentDetailsService.findDocumentsByHeaderId(id);
+        return ResponseEntity.ok(documents);
+    }
+
+
     //for graph
     @GetMapping("/documents-summary/{employeeId}")
     public ResponseEntity<Map<String, Object>> getDocumentsSummaryByEmployeeId(
@@ -241,20 +298,6 @@ public class DocumentController {
 
     // ================== DocumentDetails (File Upload) Operations ================== //
 
-//    @PostMapping("/upload")
-//    public ResponseEntity<List<String>> uploadFiles(
-//            @RequestParam("files") List<MultipartFile> files,
-//            @RequestParam("category") String category) { // Add category parameter
-//        try {
-//            // Call service method to upload files with the category
-//            List<String> filePaths = documentDetailsService.uploadFiles(files, category);
-//            return ResponseEntity.ok(filePaths);  // Return the file paths
-//        } catch (RuntimeException e) {
-//            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Collections.singletonList(e.getMessage()));
-//        }
-//    }
-
-
     @PostMapping("/upload")
     public ResponseEntity<List<String>> uploadFiles(
             @RequestParam("files") List<MultipartFile> files,
@@ -268,6 +311,51 @@ public class DocumentController {
                     .body(Collections.singletonList("Error uploading files: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/{year}/{month}/{category}/{fileName}")
+    public ResponseEntity<Resource> downloadFileAsPdf(
+            @PathVariable String year,
+            @PathVariable String month,
+            @PathVariable String category,
+            @PathVariable String fileName) {
+
+        try {
+            // Construct the file path using forward slashes
+            String filePath = String.format("D:/Dheeraj_Codes/Backend/Java/Projects/dms/DocumentServer/%s/%s/%s/%s",
+                    year, month, category, fileName);
+
+            // Ensure the file path is valid
+            Path path = Paths.get(filePath);
+            Resource resource = new UrlResource(path.toUri());
+
+            if (resource.exists() && resource.isReadable()) {
+                // Check if the file is a PDF by its extension or MIME type
+                if (fileName.toLowerCase().endsWith(".pdf")) {
+                    // Return the file as a PDF resource
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_PDF)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                            .body(resource);
+                } else {
+                    // If the file is not a PDF, return as a generic binary stream
+                    return ResponseEntity.ok()
+                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                            .body(resource);
+                }
+            } else {
+                throw new RuntimeException("File not found or not readable: " + fileName);
+            }
+        } catch (MalformedURLException e) {
+            throw new RuntimeException("Error retrieving file", e);
+        } catch (Exception e) {
+            throw new RuntimeException("Unexpected error occurred while downloading the file", e);
+        }
+    }
+
+
+
+
 
 
     // You can add more endpoints for retrieving DocumentDetails if needed

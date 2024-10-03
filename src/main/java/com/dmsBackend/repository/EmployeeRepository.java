@@ -1,15 +1,22 @@
 package com.dmsBackend.repository;
 
+import com.dmsBackend.entity.BranchMaster;
 import com.dmsBackend.entity.Employee;
 import com.dmsBackend.entity.RoleMaster;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
+@Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Integer> {
     // Find an employee by email
     Optional<Employee> findByEmail(String email);
+
+    Optional<Employee> findByRoleAndBranch(RoleMaster role, BranchMaster branch);
+
+    List<Employee> findByBranch(BranchMaster branchId);
 
     // Find employees who have no role (role is null)
     List<Employee> findByRoleIsNull();

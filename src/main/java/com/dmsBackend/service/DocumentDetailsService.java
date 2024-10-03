@@ -14,5 +14,12 @@ public interface DocumentDetailsService {
 
     void saveFileDetails(DocumentHeader documentHeader, List<String> filePaths);
 
+//    List<DocumentDetails> getByDocumentHeader(DocumentHeader documentHeader);
+
+    void updateFileDetails(DocumentHeader documentHeader, List<String> filePaths);
+
+    List<DocumentDetails> findDocumentsByHeaderId(Long headerId);
+
+
 //    void saveFileDetails(DocumentHeader documentHeader, List<String> filePaths);
 }

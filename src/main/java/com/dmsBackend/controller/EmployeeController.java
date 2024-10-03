@@ -1,5 +1,6 @@
 package com.dmsBackend.controller;
 
+import com.dmsBackend.entity.BranchMaster;
 import com.dmsBackend.entity.Employee;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.ApiResponse;
@@ -34,6 +35,7 @@ public class EmployeeController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
 
     @Autowired
     private JavaMailSender mailSender;
@@ -115,12 +117,50 @@ public class EmployeeController {
         employeeService.updateEmployeeStatus(id, isActive);
         return ResponseEntity.ok(new ApiResponse("Employee status updated successfully.", true));
     }    //update role
-    @PutMapping("/employee/{identifier}/role")
+//    @PutMapping("/employee/{identifier}/role")
+//    public ResponseEntity<?> updateEmployeeRole(@PathVariable String identifier, @RequestBody Map<String, String> requestBody) {
+//        String roleName = requestBody.get("roleName");
+//
+//        if (roleName == null || roleName.isEmpty()) {
+//            return ResponseEntity.badRequest().body("Role name must not be null or empty.");
+//        }
+//
+//        try {
+//            // Find the role by name and get its ID
+//            Integer roleId = roleService.findRoleByName(roleName)
+//                    .orElseThrow(() -> new ResourceNotFoundException("Invalid role name: " + roleName))
+//                    .getId();
+//
+//            Employee updatedEmployee;
+//
+//            // Check if the identifier is a valid integer (ID) or an email
+//            if (identifier.matches("\\d+")) {
+//                // Identifier is a numeric ID
+//                Integer employeeId = Integer.parseInt(identifier);
+//                employeeService.updateEmployeeRoleById(employeeId, roleId);
+//                updatedEmployee = employeeService.findById(employeeId); // Get updated employee details
+//            } else {
+//                // Identifier is an email
+//                employeeService.updateEmployeeRoleByEmail(identifier, roleId);
+//                updatedEmployee = employeeService.findByEmail(identifier); // Get updated employee details
+//            }
+//
+//            notifyUserRole(updatedEmployee.getEmail(), roleName);
+//            return ResponseEntity.ok("Role updated successfully.");
+//        } catch (ResourceNotFoundException e) {
+//            return ResponseEntity.badRequest().body("Error updating role: " + e.getMessage());
+//        } catch (Exception e) {
+//            return ResponseEntity.status(500).body("Error updating role: " + e.getMessage());
+//        }
+//    }
+
+    @PutMapping("/{identifier}/role")
     public ResponseEntity<?> updateEmployeeRole(@PathVariable String identifier, @RequestBody Map<String, String> requestBody) {
         String roleName = requestBody.get("roleName");
 
+        // Validate the role name
         if (roleName == null || roleName.isEmpty()) {
-            return ResponseEntity.badRequest().body("Role name must not be null or empty.");
+            return ResponseEntity.badRequest().body("Error: Role name must not be null or empty.");
         }
 
         try {
@@ -128,27 +168,27 @@ public class EmployeeController {
             Integer roleId = roleService.findRoleByName(roleName)
                     .orElseThrow(() -> new ResourceNotFoundException("Invalid role name: " + roleName))
                     .getId();
-
             Employee updatedEmployee;
 
             // Check if the identifier is a valid integer (ID) or an email
             if (identifier.matches("\\d+")) {
                 // Identifier is a numeric ID
                 Integer employeeId = Integer.parseInt(identifier);
-                employeeService.updateEmployeeRoleById(employeeId, roleId);
+                employeeService.updateEmployeeRoleById(employeeId, roleId); // Update role by employee ID
                 updatedEmployee = employeeService.findById(employeeId); // Get updated employee details
             } else {
                 // Identifier is an email
-                employeeService.updateEmployeeRoleByEmail(identifier, roleId);
+                employeeService.updateEmployeeRoleByEmail(identifier, roleId); // Update role by email
                 updatedEmployee = employeeService.findByEmail(identifier); // Get updated employee details
             }
 
+            // Notify the user of the role change
             notifyUserRole(updatedEmployee.getEmail(), roleName);
-            return ResponseEntity.ok("Role updated successfully.");
+            return ResponseEntity.ok("Success: Role updated successfully for employee with identifier: " + identifier + ".");
         } catch (ResourceNotFoundException e) {
-            return ResponseEntity.badRequest().body("Error updating role: " + e.getMessage());
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
-            return ResponseEntity.status(500).body("Error updating role: " + e.getMessage());
+            return ResponseEntity.status(500).body("Error: An unexpected error occurred while updating the role. " + e.getMessage());
         }
     }
 
@@ -164,6 +204,15 @@ public class EmployeeController {
         List<Employee> employees = employeeService.getEmployeesByRoleIsNullById(id);
         if (employees.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(employees);
+        }
+        return ResponseEntity.ok(employees);
+    }
+
+    @GetMapping("/branch/{branchId}")
+    public ResponseEntity<List<Employee>> getEmployeesByBranch(@PathVariable("branchId") BranchMaster branch) {
+        List<Employee> employees = employeeService.findEmployeesByBranch(branch);
+        if (employees.isEmpty()) {
+            return ResponseEntity.noContent().build();
         }
         return ResponseEntity.ok(employees);
     }
@@ -187,12 +236,18 @@ public class EmployeeController {
         message.setTo(email);
         message.setSubject("Role Assignment Notification");
         message.setText("Dear Employee,\n\n" +
-                "We are pleased to inform you that your role has been updated in our system. You can now log in to access your account.\n\n" +
+                "We are pleased to inform you that your role has been successfully updated.\n\n" +
                 "Assigned Role: " + roleName + "\n\n" +
-                "For security purposes, we recommend changing your password after your next login.\n\n" +
+                "Please log in to your account to review your updated role. For security purposes, we recommend changing your password after your next login.\n\n" +
                 "Best regards,\n" +
                 "The Company Team");
-        mailSender.send(message);
+
+        // Try to send the email and handle any failures
+        try {
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Error: Failed to send email notification to " + email + ". " + e.getMessage());
+        }
     }
 
 }

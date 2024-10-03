@@ -12,7 +12,7 @@ public interface DocumentHeaderService {
 
     DocumentHeader saveDocumentHeader(DocumentHeader documentHeader);
 
-    DocumentHeader updateDocumentHeader(Integer id, DocumentHeader updatedDocument);
+//    DocumentHeader updateDocumentHeader(Integer id, DocumentHeader updatedDocument);
 
     DocumentHeader findDocumentHeaderById(Integer id);
 
@@ -21,6 +21,8 @@ public interface DocumentHeaderService {
     void deleteByIdDocumentHeader(Integer id);
 
     DocumentHeader updateApprovalStatus(Integer id, DocApprovalStatus status, String rejectionReason, Integer employeeId);
+
+    DocumentHeader updateDocumentHeader(DocumentHeader documentHeader);
 
     DocumentHeader updateActiveStatus(Integer id, boolean isActive);
 
@@ -71,4 +73,5 @@ public interface DocumentHeaderService {
     Map<String, Object> getApprovalSummaryByEmployeeId(Integer employeeId);
 
 
+//    DocumentHeader getDocumentHeaderById(Integer headerId);
 }

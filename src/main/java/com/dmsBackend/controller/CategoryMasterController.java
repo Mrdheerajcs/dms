@@ -1,6 +1,7 @@
 package com.dmsBackend.controller;
 
 import com.dmsBackend.entity.CategoryMaster;
+import com.dmsBackend.entity.RoleMaster;
 import com.dmsBackend.exception.ResourceNotFoundException;
 import com.dmsBackend.payloads.ApiResponse;
 import com.dmsBackend.service.CategoryMasterService;
@@ -45,6 +46,12 @@ public class CategoryMasterController {
     public ResponseEntity<List<CategoryMaster>> findAllBranchMaster() {
         List<CategoryMaster> allCategoryMasterMaster = this.categoryMasterService.findAllCategoryMaster();
         return new ResponseEntity(allCategoryMasterMaster, HttpStatus.OK);
+    }
+
+    @GetMapping("/findActiveCategory")
+    public ResponseEntity<List<CategoryMaster>> findAllActiveCategoryMaster() {
+        List<CategoryMaster> allActiveCategoryMaster = categoryMasterService.findAllActiveCategoryMaster(true);
+        return new ResponseEntity<>(allActiveCategoryMaster, HttpStatus.OK);
     }
 
     @GetMapping("/findById/{id}")
